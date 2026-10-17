@@ -693,6 +693,7 @@ header{position:sticky;top:0;z-index:1000;background:var(--panel);border-bottom:
 .top h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.2px}
 .top .sub{color:var(--mute);font-size:13px}
 .next{margin-left:auto;text-align:right;font-size:13px;color:var(--ink2)}
+#hdrTog{display:none;position:absolute;right:10px;top:8px;padding:2px 12px;font-size:18px;line-height:1.2;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink2);cursor:pointer}
 .next b{color:var(--ink);font-size:15px}
 nav{max-width:1200px;margin:0 auto;padding:0 8px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
 nav button{border:0;background:none;color:var(--ink2);padding:12px 12px;font:inherit;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
@@ -773,6 +774,9 @@ nav button::before{content:attr(data-ic);margin-right:4px}
   nav button{flex:1;padding:6px 2px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;border-bottom:0;border-radius:8px}
   nav button::before{margin:0;font-size:18px}nav button.on{background:var(--accent-soft)}
   main{padding:12px 12px 90px}.top{padding:10px 12px 8px}.top h1{font-size:18px}
+  #hdrTog{display:block}
+  body:not(.hdr-open) #hSub,body:not(.hdr-open) #nextBox,body:not(.hdr-open) #cgBar{display:none!important}
+  #alertsWrap,.ask,.tile.tWarn{display:none!important}
   #map{height:300px}.legs{max-height:420px}
   .btn{min-height:38px}.row{gap:6px}
   .kv{grid-template-columns:84px 1fr;font-size:13px}table{font-size:13px}th,td{padding:7px 5px}
@@ -828,7 +832,7 @@ details.alerts[open] summary{margin-bottom:8px}
       <h1 id="hTitle">출장 관리</h1>
       <div class="sub" id="hSub"></div>
     </div>
-    <div class="next" id="nextBox"></div>
+    <div class="next" id="nextBox"></div><button type="button" id="hdrTog" aria-label="머리 정보 펼치기" title="일정·계정 정보 펼치기/접기">⋯</button>
   </div>
   <nav id="tabs">
     <button data-t="map" data-ic="🗺️" class="on">여정</button>
@@ -1704,7 +1708,7 @@ function heroes(out,all){
     d0!=null&&d0>0?tile('출발까지',`D-${d0}`,`${md(T.start)} 출발`):'',
     tile('항공·교통',`${F.length?F.length+'편':''}${TN.length?' · '+TN.length+'편':''}`||'없음',[...F,...TN].some(x=>isCand(x.status))?`${[...F,...TN].filter(x=>isCand(x.status)).length}건 예약 전`:F.length||TN.length?'모두 예약됨':'',[...F,...TN].some(x=>isCand(x.status))?'bad':'ok'),
     tile('숙소',H.length?`${H.length}곳 ${H.reduce((s,h)=>s+(+h.nights||0),0)}박`:'없음',nightsGap().length?`${nightsGap().length}박 미정`:H.some(h=>!isDone(h.status)&&!isCand(h.status))?'현장 결제 있음':'',nightsGap().length?'bad':''),
-    tile('점검 경고',all.length?`${all.length}건`:'없음',bad?`중요 ${bad}건 · 아래 펼쳐 확인`:'','',all.length?'':'')].join('');
+    tile('점검 경고',all.length?`${all.length}건`:'없음',bad?`중요 ${bad}건 · 아래 펼쳐 확인`:'','tWarn',all.length?'':'')].join('');
   // air
   $('#hero-air').innerHTML=nxF?[
     tile('다음 항공편',`${esc(nxF.flightNo||nxF.id)} ${esc(code(nxF.from))}→${esc(code(nxF.to))}`,`${md(nxF.dep)} ${hm(nxF.dep)} 출발 · ${rel(nxF.dep)}`,'acc'),
@@ -2158,5 +2162,6 @@ $$('.ask[data-agent]').forEach(box);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-ask]');if(!b)return;const id=b.dataset.ask;trip().show(TAB_OF[id]||'map');const el=$(`.ask[data-agent="${id}"]`);if(el&&el._ask){el._ask(b.dataset.q||'');if(el.querySelector('.askBody').style.display==='none')el.querySelector('.askToggle').click();el.scrollIntoView({behavior:'smooth',block:'start'})}});
 };if(!window.__CLOUD)window.__bootAsk();
 </script>
+<script>document.getElementById('hdrTog').addEventListener('click',function(){document.body.classList.toggle('hdr-open')});</script>
 </body>
 </html>
