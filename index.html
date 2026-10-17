@@ -1129,13 +1129,21 @@ function openTrip(r){
   bar.style.display='';barRender();
 }
 function barRender(){const st=saving?'저장 중…':dirty?'저장 대기':savedAt?'저장됨 '+hhmm(savedAt):'';
-  bar.innerHTML=`<span>☁ ${esc(user?user.email:'')}</span>${cur?`<span id="cgSt">${st}</span>`:''}<button class="btn" id="cgListBtn">출장 목록</button>${cur?`<label class="btn" title="확인서·영수증 PDF를 AI 처리 없이 저장소에만 올립니다. 데이터의 file 필드와 파일명이 같으면 📎 링크가 바로 열립니다">📁 증빙 파일 올리기<input type="file" id="cgUp" multiple style="display:none"></label><button class="btn" id="cgDl">JSON 내려받기</button>`:''}<button class="btn" id="cgOut2">로그아웃</button>`;
+  bar.innerHTML=`<span>☁ ${esc(user?user.email:'')}</span>${cur?`<span id="cgSt">${st}</span>`:''}<button class="btn" id="cgListBtn">출장 목록</button>${cur?`<label class="btn" title="확인서·영수증 PDF를 AI 처리 없이 저장소에만 올립니다. 데이터의 file 필드와 파일명이 같으면 📎 링크가 바로 열립니다">📁 증빙 파일 올리기<input type="file" id="cgUp" multiple style="display:none"></label><button class="btn" id="cgDl">JSON 내려받기</button>${ppName()?`<button class="btn" id="cgPp" title="비공개 저장소의 여권 사본을 10분짜리 임시 링크로 엽니다. 바꾸려면 📁로 '여권'으로 시작하는 파일을 올리세요">🛂 여권 사본</button>`:`<label class="btn" title="여권 사진·PDF를 비공개 저장소에만 보관합니다(AI 처리·데이터 기록 없음)">🛂 여권 사본 올리기<input type="file" id="cgPpUp" accept="image/*,.pdf" style="display:none"></label>`}`:''}<button class="btn" id="cgOut2">로그아웃</button>`;
   $('#cgListBtn').onclick=()=>{if(cur){store.del('trip-cloud-current');location.hash='';location.reload()}else showList()};
   $('#cgOut2').onclick=()=>$('#cgOut').click();
   if(cur){$('#cgDl').onclick=()=>{const b=$('#dlJson');if(b)b.click()};
     $('#cgUp').addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const st=$('#cgSt');if(st)st.textContent=`파일 ${fs.length}개 올리는 중…`;
-      try{const n=await window.__cloudUpload(fs);if(st)st.textContent=`파일 ${n}개 저장됨`;setTimeout(barRender,4000)}catch(err){if(st)st.innerHTML='<span style="color:#c0392b">'+esc(err.message)+'</span>'}})}
+      try{const n=await window.__cloudUpload(fs);if(st)st.textContent=`파일 ${n}개 저장됨`;setTimeout(barRender,4000)}catch(err){if(st)st.innerHTML='<span style="color:#c0392b">'+esc(err.message)+'</span>'}});
+    const pp=$('#cgPp');if(pp)pp.onclick=()=>openCloudFile(ppName());
+    const ppUp=$('#cgPpUp');if(ppUp)ppUp.addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const st=$('#cgSt');if(st)st.textContent='여권 사본 올리는 중…';
+      const ext=(/\.([A-Za-z0-9]{1,5})$/.exec(f.name)||[,'jpg'])[1].toLowerCase();
+      try{await window.__cloudUpload([new File([f],'여권사본.'+ext,{type:f.type})]);if(st)st.textContent='여권 사본 저장됨';setTimeout(barRender,1500)}catch(err){if(st)st.innerHTML='<span style="color:#c0392b">'+esc(err.message)+'</span>'}})}
 }
+function ppName(){const fs=cur&&cur.files||{};return Object.keys(fs).find(n=>/^(여권|passport)/i.test(n))||''}
+async function openCloudFile(name){const path=cur&&cur.files&&cur.files[name];
+  if(!path)return alert(`"${name}" 파일이 클라우드에 없습니다. 경비관리 탭의 증빙 업로드나 프롬프트 창의 📎로 올리면 여기서 열 수 있습니다.`);
+  const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(path,600);if(error||!data)return alert('파일을 열지 못했습니다: '+explain(error||'?'));window.open(data.signedUrl,'_blank','noopener')}
 
 /* ---- 자동 저장 ---- */
 function snapshot(){const d=window.__trip&&window.__trip.data();if(!d)return null;const K=keyOf(d);return {title:(d.trip&&d.trip.title)||'',start_date:(d.trip&&d.trip.start)||null,end_date:(d.trip&&d.trip.end)||null,data:d,expenses:store.get(K+'exp',[]),fx:store.get(K+'fx',{}),files:(cur&&cur.files)||{}}}
@@ -1159,9 +1167,7 @@ window.__cloudUpload=async files=>{if(!cur||!user)return;const map={...(cur.file
   if(n){cur.files=map;const {error}=await sb.from('trips').update({files:map}).eq('id',cur.id);if(error)errs.push('목록 저장 실패: '+explain(error))}
   if(errs.length)throw new Error((n?`${n}개 저장됨, 실패: `:'')+errs.join(' / '));return n};
 window.__cloudFileUrl=f=>{if(!f)return '';if(/^(https?:|data:|blob:)/i.test(f))return f;return '#cf='+encodeURIComponent(f)};
-document.addEventListener('click',async e=>{const a=e.target.closest('a[href^="#cf="]');if(!a)return;e.preventDefault();const name=decodeURIComponent(a.getAttribute('href').slice(4));const path=cur&&cur.files&&cur.files[name];
-  if(!path)return alert(`"${name}" 파일이 클라우드에 없습니다. 경비관리 탭의 증빙 업로드나 프롬프트 창의 📎로 올리면 여기서 열 수 있습니다.`);
-  const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(path,600);if(error||!data)return alert('파일을 열지 못했습니다: '+explain(error||'?'));window.open(data.signedUrl,'_blank','noopener')});
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#cf="]');if(!a)return;e.preventDefault();openCloudFile(decodeURIComponent(a.getAttribute('href').slice(4)))});
 
 /* ---- Claude 중계 (키는 서버에만) ---- */
 window.__cloudCall=async(body,signal)=>{const {data:{session}}=await sb.auth.getSession();if(!session)throw Object.assign(new Error('로그인이 만료됐습니다 — 다시 로그인하세요'),{status:401});
