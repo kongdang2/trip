@@ -693,6 +693,8 @@ header{position:sticky;top:0;z-index:1000;background:var(--panel);border-bottom:
 .top h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.2px}
 .top .sub{color:var(--mute);font-size:13px}
 .next{margin-left:auto;text-align:right;font-size:13px;color:var(--ink2)}
+.clock{font-size:12px;line-height:1.35;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;align-self:center}.clock b{color:var(--mute);font-weight:600;margin-right:3px}
+#quickApps ul{margin:6px 0 0;padding-left:18px}#quickApps li{margin:3px 0}
 #hdrTog{display:none;position:absolute;right:10px;top:8px;padding:2px 12px;font-size:18px;line-height:1.2;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink2);cursor:pointer}
 .next b{color:var(--ink);font-size:15px}
 nav{max-width:1200px;margin:0 auto;padding:0 8px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
@@ -776,7 +778,9 @@ nav button::before{content:attr(data-ic);margin-right:4px}
   main{padding:12px 12px 90px}.top{padding:10px 12px 8px}.top h1{font-size:18px}
   #hdrTog{display:block}
   body:not(.hdr-open) #hSub,body:not(.hdr-open) #nextBox,body:not(.hdr-open) #cgBar{display:none!important}
-  #alertsWrap,.ask,.tile.tWarn{display:none!important}
+  #alertsWrap,.tile.tWarn{display:none!important}
+  body:not(.hdr-open) .ask{display:none!important}
+  #clock{position:absolute;right:64px;top:5px;font-size:11px}
   #map{height:300px}.legs{max-height:420px}
   .btn{min-height:38px}.row{gap:6px}
   .kv{grid-template-columns:84px 1fr;font-size:13px}table{font-size:13px}th,td{padding:7px 5px}
@@ -832,7 +836,7 @@ details.alerts[open] summary{margin-bottom:8px}
       <h1 id="hTitle">출장 관리</h1>
       <div class="sub" id="hSub"></div>
     </div>
-    <div class="next" id="nextBox"></div><button type="button" id="hdrTog" aria-label="머리 정보 펼치기" title="일정·계정 정보 펼치기/접기">⋯</button>
+    <div id="clock" class="clock" aria-label="서울·현지 시각"></div><div class="next" id="nextBox"></div><button type="button" id="hdrTog" aria-label="머리 정보 펼치기" title="일정·계정 정보 펼치기/접기">⋯</button>
   </div>
   <nav id="tabs">
     <button data-t="map" data-ic="🗺️" class="on">여정</button>
@@ -1227,6 +1231,11 @@ const saveExp=ex=>{store.set(KEY+'exp',ex);if(window.__cloudSave)window.__cloudS
 const travelers=(T.travelers||[]).map(t=>t.name+(t.title?' '+t.title:'')).join(', ');
 document.title=T.title||'출장 관리';
 $('#hTitle').textContent=T.title||'출장 관리';
+(function(){const off=s=>{const m=/^([+-])(\d{2}):?(\d{2})$/.exec(s||'');return m?(m[1]==='-'?-1:1)*(+m[2]*60+ +m[3]):null};
+  const home=off(T.homeTz);const h=home==null?540:home,e=off(T.eventTz);const box=document.getElementById('clock');if(!box)return;
+  const f=o=>{const d=new Date(Date.now()+o*60000);return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')};
+  const tick=()=>{box.innerHTML=(e==null||e===h)?`<div><b>서울·현지</b>${f(h)}</div>`:`<div><b>서울</b>${f(h)}</div><div><b>현지</b>${f(e)}</div>`};
+  tick();if(window.__clockTimer)clearInterval(window.__clockTimer);window.__clockTimer=setInterval(tick,10000)})();
 $('#hSub').textContent=[T.start&&`${T.start.replaceAll('-','.')} – ${(T.end||'').slice(5).replaceAll('-','.')}`,T.subtitle,travelers].filter(Boolean).join(' · ');
 $('#footSrc').textContent=(T.sources?'자료 출처: '+T.sources+'. ':'')+'여권번호·카드번호·PIN 같은 민감정보는 넣지 않습니다. 좌표가 근사치인 장소는 지도에 그렇게 표시합니다.';
 
@@ -1514,9 +1523,24 @@ function mapLink(k){const p=P[k]||{};const q=(p.local||p.name||'').split(' · ')
 const amapNav=(to,from)=>{const t=P[to]||{};if(t.lat==null)return mapLink(to);const nm=k=>encodeURIComponent(((P[k]||{}).local||(P[k]||{}).name||k).split(' · ').pop());
   const f=P[from]||{};return `https://uri.amap.com/navigation?${f.lat!=null?`from=${f.lng},${f.lat},${nm(from)}&`:''}to=${t.lng},${t.lat},${nm(to)}&mode=car&policy=1&src=trip-dashboard&coordinate=wgs84&callnative=1`};
 const gmap=k=>{const p=P[k]||{};return p.lat!=null?`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`:`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name||k)}`};
+function quickApps(tr){
+  if(tr.mapApp!=='amap')return '';
+  const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/i.test(ua),and=/Android/i.test(ua);
+  const amap=ios?'iosamap://myLocation':and?'androidamap://myLocation?sourceApplication=trip':'https://uri.amap.com/';
+  const didi=ios?'https://apps.apple.com/cn/app/id1362398401':'https://play.google.com/store/apps/details?id=com.didiglobal.passenger';
+  const B=(h,t,c='')=>`<a class="btn ${c}" href="${h}"${/^https?:/.test(h)?' target="_blank" rel="noopener"':''}>${t}</a>`;
+  return `<div class="card" id="quickApps" style="margin-bottom:14px"><h3 style="margin:0 0 8px">📱 현지 앱 바로가기 <span class="muted small">폰에서 누르세요</span></h3>
+   <div class="row">${B(amap,'🧭 가오더','primary')}${B('alipays://platformapi/startapp?appId=20000056','💳 알리페이 결제코드')}${B('alipays://platformapi/startapp?saId=10000007','📷 알리페이 스캔')}${B(didi,'🚕 디디 앱')}</div>
+   <div class="row" style="margin-top:8px">${B('https://papago.naver.com/','🌐 파파고')}${B('https://lens.google.com/','🔍 구글 렌즈')}<button class="btn" type="button" data-goto="tr">🎧 통역·녹취</button></div>
+   <details class="small" style="margin-top:8px"><summary>사용 팁</summary><ul>
+    <li>앱 링크는 폰에서만 열립니다. 앱이 없으면 아무 반응이 없을 수 있으니 출국 전에 설치·로그인·카드 등록을 끝내 두세요.</li>
+    <li>택시는 알리페이 안의 디디나 디디 앱으로 부르고, 목적지는 아래 "택시 기사에게 보여줄 주소"의 중국어를 복사해 붙여넣는 게 가장 정확합니다.</li>
+    <li>중국어 화면이 막히면 구글 렌즈, 파파고 이미지 번역, 폰의 화면 번역(갤럭시 서클 투 서치 등)으로 번역해 보세요. 로밍 데이터에서는 대체로 열리지만 호텔 와이파이에서는 구글이 막힐 수 있습니다.</li>
+    <li>사람과 대화는 통번역 탭, 지도 길안내는 가오더가 중국 좌표계라 가장 정확합니다.</li></ul></details></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(b)show(b.dataset.goto)});
 function moveCards(){
   const tr=DATA.transport||{};const appName=tr.mapApp==='amap'?'가오더':'지도 앱';
-  $('#moveIntro').innerHTML=tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'';
+  $('#moveIntro').innerHTML=quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
   $('#moveCards').innerHTML=(tr.moves||[]).map(m=>`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${m.from===m.to?esc(P[m.from]?.name||m.from):esc(P[m.from]?.name||m.from)+' → '+esc(P[m.to]?.name||m.to)}</h3><span class="pill">${md(m.date)}</span></div>
    <div class="small" style="margin:8px 0">${[m.km,m.time,m.cost].filter(Boolean).map(esc).join(' · ')} ${m.estimate!==false?'<span class="muted">(추정)</span>':''}</div>
    <div class="small">${m.tip||''}</div>
@@ -2111,7 +2135,7 @@ function box(el){
    <div class="askStat small muted"></div>
   </div>`;
   const body=el.querySelector('.askBody'),ta=el.querySelector('textarea'),msgs=el.querySelector('.msgs'),stat=el.querySelector('.askStat');
-  const open=store.get('trip-ask-open',true);body.style.display=open?'':'none';el.querySelector('.askToggle').textContent=open?'▾':'▸';
+  const open=store.get('trip-ask-open',false);body.style.display=open?'':'none';el.querySelector('.askToggle').textContent=open?'▾':'▸';
   el.querySelector('.askToggle').onclick=()=>{const o=body.style.display==='none';body.style.display=o?'':'none';el.querySelector('.askToggle').textContent=o?'▾':'▸';store.set('trip-ask-open',o)};
   const keyRow=el.querySelector('.keyRow');const showKey=()=>{keyRow.style.display='';el.querySelector('.askModel').innerHTML=api().MODELS.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('');el.querySelector('.askModel').value=store.get('trip-api-model','claude-opus-5-5')};
   if(!window.__CLOUD&&!store.get('trip-api-key',''))showKey();
