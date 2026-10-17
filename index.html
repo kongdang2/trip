@@ -1525,19 +1525,32 @@ const amapNav=(to,from)=>{const t=P[to]||{};if(t.lat==null)return mapLink(to);co
 const gmap=k=>{const p=P[k]||{};return p.lat!=null?`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`:`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name||k)}`};
 function quickApps(tr){
   if(tr.mapApp!=='amap')return '';
-  const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/i.test(ua),and=/Android/i.test(ua);
-  const amap=ios?'iosamap://myLocation':and?'androidamap://myLocation?sourceApplication=trip':'https://uri.amap.com/';
-  const didi=ios?'https://apps.apple.com/cn/app/id1362398401':'https://play.google.com/store/apps/details?id=com.didiglobal.passenger';
-  const B=(h,t,c='')=>`<a class="btn ${c}" href="${h}"${/^https?:/.test(h)?' target="_blank" rel="noopener"':''}>${t}</a>`;
-  return `<div class="card" id="quickApps" style="margin-bottom:14px"><h3 style="margin:0 0 8px">📱 현지 앱 바로가기 <span class="muted small">폰에서 누르세요</span></h3>
-   <div class="row">${B(amap,'🧭 가오더','primary')}${B('alipays://platformapi/startapp?appId=20000056','💳 알리페이 결제코드')}${B('alipays://platformapi/startapp?saId=10000007','📷 알리페이 스캔')}${B(didi,'🚕 디디 앱')}</div>
-   <div class="row" style="margin-top:8px">${B('https://papago.naver.com/','🌐 파파고')}${B('https://lens.google.com/','🔍 구글 렌즈')}<button class="btn" type="button" data-goto="tr">🎧 통역·녹취</button></div>
+  const B=(id,t,c='')=>`<button class="btn ${c}" type="button" data-app="${id}">${t}</button>`;
+  const W=(h,t)=>`<a class="btn" href="${h}" target="_blank" rel="noopener">${t}</a>`;
+  return `<div class="card" id="quickApps" style="margin-bottom:14px"><h3 style="margin:0 0 8px">📱 현지 앱 바로가기 <span class="muted small">폰에서 누르면 설치된 앱이 열립니다</span></h3>
+   <div class="row">${B('amap','🧭 가오더','primary')}${B('didi','🚕 디디')}${B('didiAli','🚕 디디(알리페이 안)')}</div>
+   <div class="row" style="margin-top:8px">${B('aliPay','💳 알리페이 결제코드')}${B('aliScan','📷 알리페이 스캔')}${B('wxPay','💚 위챗페이')}${B('wxScan','📷 위챗 스캔')}</div>
+   <div class="row" style="margin-top:8px">${W('https://papago.naver.com/','🌐 파파고')}${W('https://lens.google.com/','🔍 구글 렌즈')}<button class="btn" type="button" data-goto="tr">🎧 통역·녹취</button></div>
    <details class="small" style="margin-top:8px"><summary>사용 팁</summary><ul>
-    <li>앱 링크는 폰에서만 열립니다. 앱이 없으면 아무 반응이 없을 수 있으니 출국 전에 설치·로그인·카드 등록을 끝내 두세요.</li>
-    <li>택시는 알리페이 안의 디디나 디디 앱으로 부르고, 목적지는 아래 "택시 기사에게 보여줄 주소"의 중국어를 복사해 붙여넣는 게 가장 정확합니다.</li>
-    <li>중국어 화면이 막히면 구글 렌즈, 파파고 이미지 번역, 폰의 화면 번역(갤럭시 서클 투 서치 등)으로 번역해 보세요. 로밍 데이터에서는 대체로 열리지만 호텔 와이파이에서는 구글이 막힐 수 있습니다.</li>
-    <li>사람과 대화는 통번역 탭, 지도 길안내는 가오더가 중국 좌표계라 가장 정확합니다.</li></ul></details></div>`}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(b)show(b.dataset.goto)});
+    <li>앱이 없으면 설치 화면(플레이스토어·앱스토어)으로 넘어갑니다. 출국 전에 설치·로그인·카드 등록을 끝내 두세요.</li>
+    <li>디디는 중국 본토용 '滴滴出行(DiDi China)' 앱이나 알리페이 안의 디디를 씁니다. 디디 국제판(DiDi Rider)은 중국 본토에서 쓰는 앱이 아닙니다.</li>
+    <li>택시 목적지는 아래 "택시 기사에게 보여줄 주소"의 중국어를 복사해 붙여넣는 게 가장 정확합니다.</li>
+    <li>결제코드·스캔 버튼이 앱 첫 화면만 열면, 앱 안에서 付款码(결제코드)·扫一扫(스캔)를 누르세요. 앱 버전에 따라 바로가기가 막힌 경우가 있습니다.</li>
+    <li>중국어 화면은 구글 렌즈, 파파고 이미지 번역, 폰의 화면 번역(갤럭시 서클 투 서치 등)으로 번역해 보세요. 로밍 데이터에서는 대체로 열리지만 호텔 와이파이에서는 구글이 막힐 수 있습니다.</li></ul></details></div>`}
+const APPS=(()=>{const ali={pkg:'com.eg.android.AlipayGphone',ios:'333206289'},wx={pkg:'com.tencent.mm',ios:'414478124'};return {
+  amap:{s:'androidamap://myLocation?sourceApplication=trip',i:'iosamap://myLocation?sourceApplication=trip',pkg:'com.autonavi.minimap',ios:'461703208'},
+  didi:{s:'diditaxi://',pkg:'com.sdu.didi.psnger',ios:'554499054'},
+  didiAli:{s:'alipays://platformapi/startapp?appId=20000778',...ali},
+  aliPay:{s:'alipays://platformapi/startapp?appId=20000056',...ali},
+  aliScan:{s:'alipayqr://platformapi/startapp?saId=10000007',...ali},
+  wxPay:{s:'weixin://widget/pay',...wx},
+  wxScan:{s:'weixin://scanqrcode',...wx}}})();
+function openApp(id){const a=APPS[id];if(!a)return;const ua=navigator.userAgent;
+  const play='https://play.google.com/store/apps/details?id='+a.pkg,store='https://apps.apple.com/app/id'+a.ios;
+  if(/Android/i.test(ua)){const m=/^([a-z0-9]+):\/\/(.*)$/i.exec(a.s);location.href=`intent://${m[2]}#Intent;scheme=${m[1]};package=${a.pkg};S.browser_fallback_url=${encodeURIComponent(play)};end`;return}
+  if(/iPhone|iPad|iPod/i.test(ua)){const t0=Date.now();location.href=a.i||a.s;setTimeout(()=>{if(!document.hidden&&Date.now()-t0<4000)location.href=store},1800);return}
+  alert('휴대폰에서 누르면 설치된 앱이 열립니다.')}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(b)show(b.dataset.goto);const ap=e.target.closest('[data-app]');if(ap)openApp(ap.dataset.app)});
 function moveCards(){
   const tr=DATA.transport||{};const appName=tr.mapApp==='amap'?'가오더':'지도 앱';
   $('#moveIntro').innerHTML=quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
