@@ -695,6 +695,7 @@ header{position:sticky;top:0;z-index:1000;background:var(--panel);border-bottom:
 .next{margin-left:auto;text-align:right;font-size:13px;color:var(--ink2)}
 .clock{font-size:12px;line-height:1.35;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;align-self:center}.clock b{color:var(--mute);font-weight:600;margin-right:3px}
 #placeList .plRow{display:flex;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);flex-wrap:wrap}#placeList .plRow:first-child{border-top:0}#placeList .t{flex:1;min-width:150px}#placeList .pz{color:var(--mute);font-size:12px;margin-top:2px}#placeList .m{display:flex;gap:6px;flex-wrap:wrap}
+#apGuide details{border-top:1px solid var(--line);padding:8px 0;scroll-margin-top:80px}#apGuide details:first-of-type{border-top:0}#apGuide summary{cursor:pointer;font-weight:600}#apGuide summary .muted{font-weight:400}#apGuide ol{margin:6px 0 0;padding-left:20px}#apGuide li{margin:4px 0;line-height:1.5}#apGuide .say{display:inline-flex;gap:6px;align-items:center;background:var(--soft,#f3f5f8);border-radius:6px;padding:2px 6px;margin:2px 0}#apGuide .say button{padding:1px 7px;font-size:12px}#apGuide .warn{color:#b45309}.apgLk{font-size:12px;margin-left:6px;white-space:nowrap}
 #quickApps ul{margin:6px 0 0;padding-left:18px}#quickApps li{margin:3px 0}
 #hdrTog{display:none;position:absolute;right:10px;top:8px;padding:2px 12px;font-size:18px;line-height:1.2;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink2);cursor:pointer}
 .next b{color:var(--ink);font-size:15px}
@@ -1418,7 +1419,7 @@ function legList(){
   LG.forEach((l,i)=>{const d=md(l.t);if(d!==day){day=d;html+=`<div class="dayhead">${d}</div>`}
     const st=legStatus(l);
     if(legFormAt&&legFormAt.mode==='edit'&&legFormAt.i===i){html+=legForm(l,i);return}
-    html+=`<div class="leg" data-i="${i}"><div class="dot" style="background:${COLOR[l.type]||COLOR.event}">${l.icon||ICON[l.type]||'•'}</div><div style="flex:1;min-width:0"><div><b>${esc(l.title)}</b> ${isCand(st)?'<span class="pill bad">예약 전</span>':''}</div><div class="t">${hm(l.t)}${l.end?'~'+hm(l.end):''} · ${esc(l.desc||'')}</div></div>${legEditMode?`<div class="ops"><button class="btn" data-legedit="${i}" title="수정">✎</button><button class="btn" data-legins="${i}" title="이 다음에 일정 추가">＋</button><button class="btn" data-legdel="${i}" title="삭제">✕</button></div>`:''}</div>`;
+    html+=`<div class="leg" data-i="${i}"><div class="dot" style="background:${COLOR[l.type]||COLOR.event}">${l.icon||ICON[l.type]||'•'}</div><div style="flex:1;min-width:0"><div><b>${esc(l.title)}</b> ${isCand(st)?'<span class="pill bad">예약 전</span>':''}</div><div class="t">${hm(l.t)}${l.end?'~'+hm(l.end):''} · ${esc(l.desc||'')}${apgLinks(l)}</div></div>${legEditMode?`<div class="ops"><button class="btn" data-legedit="${i}" title="수정">✎</button><button class="btn" data-legins="${i}" title="이 다음에 일정 추가">＋</button><button class="btn" data-legdel="${i}" title="삭제">✕</button></div>`:''}</div>`;
     if(legFormAt&&legFormAt.mode==='insert'&&legFormAt.i===i)html+=legForm(null,i)});
   if(!LG.length&&!legFormAt)html+='<div style="padding:14px" class="muted small">일정이 아직 없습니다. "일정 편집"으로 직접 넣거나 위 프롬프트 창에 요청하세요.</div>';
   $('#legList').innerHTML=html;
@@ -1572,9 +1573,65 @@ async function taxiTo(k,btn){const nm=zhName(P[k]);let ok=false;
   try{await navigator.clipboard.writeText(nm);ok=true}catch(_){const ta=document.createElement('textarea');ta.value=nm;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{ok=document.execCommand('copy')}catch(__){}ta.remove()}
   const o=btn.textContent;btn.textContent=ok?'복사됨 → 디디':'복사 실패';setTimeout(()=>btn.textContent=o,1800);setTimeout(()=>openApp('didiAli'),350)}
 document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n)return navTo(n.dataset.nav);const x=e.target.closest('[data-taxi]');if(x)taxiTo(x.dataset.taxi,x)});
+// 공항별 기본 안내(웹 자료 기준, 현장 표지·앱 안내가 우선). 키: 공항코드+터미널번호:arr|dep|xfer. 데이터의 airportGuides가 있으면 그쪽이 우선.
+const AP_GUIDE={
+ 'SHA1:arr':{title:'상하이 훙차오 T1 도착 → 택시 타는 곳',steps:[
+  '내리면 <b>入境 / Arrivals</b> 표지 → 검역 → 입국심사(<b>外国人</b> 줄). 지문 등록 기계가 있으면 먼저 찍고 줄 서기',
+  '<b>行李提取</b>(수하물 찾기) → 세관 <b>无申报</b>(녹색 통로)로 나오면 1층 도착홀',
+  '<b>出租车 Taxi</b> 표지를 따라 <b>1층 1번 문(1号门) 밖</b> 택시 승강장(승차 칸 8개). 직원이 안내하는 공식 줄에서만 타기',
+  '디디는 짐을 찾은 뒤 호출. 앱이 정해주는 <b>网约车上车点</b>(T1은 주차장 쪽 전용 승차장)으로 가고, 앱 지도 위치를 우선',
+  '<span class="warn">도착홀에서 "打车吗?" 하며 다가오는 호객 기사는 따라가지 말기(무허가·바가지)</span>',
+  '출발 전 미터기 사용 확인: <span class="say">请打表 <button class="btn" type="button" data-copy="请打表">복사</button></span> 고속도로 통행료는 따로 낼 수 있음'],
+  src:'상하이공항그룹·澎湃新闻 교통 안내(2024~2026)'},
+ 'SHA2:dep':{title:'상하이 훙차오 T2 출발 (국내선)',steps:[
+  '기사에게 터미널을 정확히: <span class="say">虹桥机场2号航站楼，东航国内出发 <button class="btn" type="button" data-copy="虹桥机场2号航站楼，东航国内出发">복사</button></span> 도착(T1)과 출발(T2)이 다른 터미널',
+  '<b>3층 出发层</b>에 하차. 하차 문은 A~D 체크인 구역이면 3~6번 문, E·G는 7~8번, F·H는 8·10번',
+  '들어가서 전광판(<b>值机</b>)에서 편명으로 동방항공 카운터 구역(A~H) 확인 → 체크인·짐 부치기',
+  '보안검색: 보조배터리는 부치지 말고 기내로(100Wh 이하, 3C 표시 있는 것), 노트북·태블릿은 꺼내기, 생수는 반입 불가(빈 텀블러는 가능)',
+  '수하물 마감·게이트 마감 시각은 항공 탭 기준. 연휴·저녁 시간대는 보안검색 줄이 길 수 있음'],
+  src:'澎湃新闻 虹桥机场登机攻略(2024)'},
+ 'KWE3:arr':{title:'구이양 룽둥바오 T3 도착 → 택시 타는 곳',steps:[
+  '<b>到达 / 行李提取</b> 표지 → 1층에서 짐 찾기',
+  '출구로 나와 <b>出租车</b> 표지 → <b>1층 21번 문(21号门) 맞은편, 가장 바깥쪽 택시 차로</b>가 승차 지점. 앞쪽 차선 두 줄이 택시 대기 구역',
+  '저녁 도착이면 택시 줄이 길 수 있음(대기 구역 약 400m). 줄 맨 앞에 배차 부스가 있으니 순서대로',
+  '디디는 짐 찾은 뒤 호출하고 앱이 정해주는 <b>网约车上车点</b>으로 이동(T3 승차장 위치는 앱 표시를 우선)',
+  '<span class="warn">구이양은 T2·T3가 나뉘어 있음. 도착 터미널은 기내 방송·전광판으로 한 번 더 확인</span>'],
+  src:'贵阳机场 T3 개항 교통 안내(2021)'},
+ 'KWE3:dep':{title:'구이양 룽둥바오 T3 출발',steps:[
+  '기사에게: <span class="say">龙洞堡机场T3航站楼，东航出发 <button class="btn" type="button" data-copy="龙洞堡机场T3航站楼，东航出发">복사</button></span> (T2·T3 분리, 전날 동방항공 앱에서 터미널 확인)',
+  '출발층에 내려 전광판에서 동방항공 카운터 확인 → 체크인',
+  '다음 항공편으로 갈아탄다면 체크인할 때 꼭 물어보기: <span class="say">行李直挂到仁川吗？ <button class="btn" type="button" data-copy="行李直挂到仁川吗？">복사</button></span> (짐이 인천까지 바로 가나요?) → 탑승권을 두 장 다 받았는지 확인',
+  '보안검색 규칙은 국내선과 같음(보조배터리 기내, 생수 불가)'],
+  src:'동방항공 공항 안내'},
+ 'XIY5:xfer':{title:'시안 셴양 T5 환승 (국내선 도착 → 국제선 출발)',steps:[
+  '<b>A. 짐이 최종 목적지까지 연결된 경우</b>(탑승권 2장 받음): 내려서 <b>中转 / 国内转国际 Transfer</b> 표지 → <b>2층 中转03区</b> 동방항공 국내→국제 환승 카운터 → 출국 검사(검역·세관·보안·출국심사) → 국제선 게이트',
+  '<b>B. 짐이 연결되지 않은 경우</b>: <b>到达</b> 표지 → 1층에서 짐 찾기 → <b>3층 국제선 출발층</b>(533·534번 문 쪽) → D·E·G·H 체크인 구역에서 다시 체크인 → 출국 검사 → 게이트',
+  '국제선 체크인은 출발 3시간 전에 열고 40분 전에 닫힘. 환승 수속도 출발 40분 전에 마감',
+  '<span class="warn">공항 안내 페이지에 "환승 서비스 일시 중단" 문구가 남아 있어, 연결 여부를 모르면 B 동선으로 움직이는 게 안전</span>',
+  '헷갈리면 직원에게: <span class="say">我要转国际航班 <button class="btn" type="button" data-copy="我要转国际航班">복사</button></span> (국제선으로 갈아타요)'],
+  src:'시안공항·동방항공 T5 안내(2025)'}
+};
+const apKey=p=>{if(!p||!p.code)return '';const m=/T\s?(\d)/i.exec((p.name||'')+' '+(p.local||''));return p.code+(m?m[1]:'')};
+function apgItems(){const out=[],seen={};const fl=LG.filter(l=>l.type==='fly');const isKR=p=>p&&/서울|인천|김포|부산|제주|한국/.test(p.city||'');
+  fl.forEach((l,i)=>{const nx=fl[i+1],a=P[l.to],d=P[l.from];
+    const add=(k,p,kind,leg)=>{if(!k||!p)return;const key=k+':'+kind;if(seen[key])return;seen[key]=1;out.push({key,p,kind,leg})};
+    if(i===0||!(fl[i-1]&&P[fl[i-1].to]&&P[fl[i-1].to].code===(d||{}).code&&new Date(l.t)-new Date(fl[i-1].end||fl[i-1].t)<12*36e5))if(!isKR(d))add(apKey(d),d,'dep',l);
+    const xfer=nx&&P[nx.from]&&a&&P[nx.from].code===a.code&&new Date(nx.t)-new Date(l.end||l.t)<12*36e5;
+    if(!isKR(a))add(apKey(a),a,xfer?'xfer':'arr',l)});
+  return out}
+const apgGet=key=>Object.assign({},AP_GUIDE[key]||{},((DATA.airportGuides||{})[key])||{});
+const apgLbl={arr:'도착 후 길 안내',dep:'출발 안내',xfer:'환승 안내'};
+function apgLinks(l){if(l.type!=='fly')return '';return apgItems().filter(x=>x.leg===l).map(x=>`<a href="#apg-${esc(x.key)}" class="apgLk" data-apg="${esc(x.key)}">🧭 ${apgLbl[x.kind]}</a>`).join('')}
+function airportCard(){const it=apgItems();if(!it.length)return '';
+  const body=it.map(x=>{const g=apgGet(x.key),has=(g.steps||[]).length;
+    const q=`${x.p.name}(${x.p.local||x.p.code}) ${apgLbl[x.kind]}을 웹에서 확인해 airportGuides["${x.key}"]에 {title, steps:[...], src}로 넣어줘. 내린 곳에서 택시·디디 타는 곳(층·문 번호), 중국어 표지판, 주의할 점 위주로.`;
+    return `<details id="apg-${esc(x.key)}"><summary>${esc(g.title||x.p.name+' '+apgLbl[x.kind])} <span class="muted small">${md(x.leg.t)}</span></summary>${has?`<ol>${g.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="small muted" style="margin-top:4px">출처: ${esc(g.src||'웹 자료')} · 현장 표지와 앱 안내가 다르면 현장이 우선</div>`:'<div class="small muted" style="margin:6px 0">아직 안내가 없습니다.</div>'}<div class="row" style="margin-top:6px"><button class="btn" type="button" data-ask="journey" data-q="${esc(q)}">${has?'🔎 AI로 최신 정보 다시 확인':'🔎 AI로 공항 안내 만들기'}</button></div></details>`}).join('');
+  return `<div class="card" id="apGuide" style="margin-bottom:14px"><h3 style="margin:0 0 4px">🧭 공항 안 길 안내 <span class="muted small">내린 뒤 택시 타는 곳·환승 동선</span></h3>${body}</div>`}
+document.addEventListener('click',async e=>{const c=e.target.closest('[data-copy]');if(c){e.preventDefault();const t=c.dataset.copy;let ok=false;try{await navigator.clipboard.writeText(t);ok=true}catch(_){}const o=c.textContent;c.textContent=ok?'복사됨':'길게 눌러 복사';setTimeout(()=>c.textContent=o,1500);return}
+  const a=e.target.closest('[data-apg]');if(a){e.preventDefault();const d=document.getElementById('apg-'+a.dataset.apg);if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}}});
 function moveCards(){
   const tr=DATA.transport||{};const appName=tr.mapApp==='amap'?'가오더':'지도 앱';
-  $('#moveIntro').innerHTML=placesCard(tr)+quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
+  $('#moveIntro').innerHTML=airportCard()+placesCard(tr)+quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
   $('#moveCards').innerHTML=(tr.moves||[]).map(m=>`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${m.from===m.to?esc(P[m.from]?.name||m.from):esc(P[m.from]?.name||m.from)+' → '+esc(P[m.to]?.name||m.to)}</h3><span class="pill">${md(m.date)}</span></div>
    <div class="small" style="margin:8px 0">${[m.km,m.time,m.cost].filter(Boolean).map(esc).join(' · ')} ${m.estimate!==false?'<span class="muted">(추정)</span>':''}</div>
    <div class="small">${m.tip||''}</div>
@@ -2146,7 +2203,7 @@ const TOOL={name:'update_trip_data',description:'출장 데이터(trip-data.json
  input_schema:{type:'object',properties:{ops:{type:'array',items:{type:'object',properties:{op:{type:'string',enum:['set','push','delete']},path:{type:'string',description:'점 표기 경로. 예: flights.0.status, hotels.1.cancelText, info.sections, places.HTL1.lat, transport.moves.2.depart, notes'},value:{description:'set/push 할 값(문자열·숫자·객체·배열)'}},required:['op','path']}},summary:{type:'string',description:'변경 내용 한 줄 요약'}},required:['ops','summary']}};
 const sys=(id)=>{const d=trip().data();const a=AGENTS[id];return `당신은 "${d.trip?.title||'이번 출장'}" 출장의 ${a[1]}입니다 (담당: ${a[2]}). 아래 trip-data.json이 현재 출장 데이터이고, 현재 시각은 ${new Date().toString()} 입니다.
 - 한국어로 간결하게, 결론부터 답합니다. 긴 설명보다 목록을 씁니다.
-- 사용자가 수정·추가·반영·갱신·채워 달라고 하면 반드시 update_trip_data 도구로 데이터를 실제로 고칩니다. 경로는 점 표기(flights.0.status). 배열에 추가는 push, 항목 삭제는 delete. 스키마는 trip-data/1 (flights, trains[KTX·버스: id,kind,no,from,to,dep,arr,seat,status,fare,currency,booking,manage,why], hotels, places, legs[type fly|rail|bus|ground|stay|meet|event], transport.moves, rules.sections, info{updated,sections[{title,items[[아이콘,HTML]],note}]}, notes[{agent,lv,msg}]). 새 장소는 places에 lat/lng와 함께 넣습니다.
+- 사용자가 수정·추가·반영·갱신·채워 달라고 하면 반드시 update_trip_data 도구로 데이터를 실제로 고칩니다. 경로는 점 표기(flights.0.status). 배열에 추가는 push, 항목 삭제는 delete. 스키마는 trip-data/1 (flights, trains[KTX·버스: id,kind,no,from,to,dep,arr,seat,status,fare,currency,booking,manage,why], hotels, places, legs[type fly|rail|bus|ground|stay|meet|event], transport.moves, rules.sections, info{updated,sections[{title,items[[아이콘,HTML]],note}]}, notes[{agent,lv,msg}], airportGuides{"SHA1:arr"처럼 공항코드+터미널번호:arr|dep|xfer → {title,steps:[HTML 한 줄씩],src}}). 새 장소는 places에 lat/lng와 함께 넣습니다.
 - 날짜·시각은 ISO 8601에 현지 오프셋(2026-10-20T08:30+09:00). 금액은 숫자.
 - 현지 소액 지출(택시·식사 등 영수증)은 path "expenses"에 push {date,cat(교통|식사|숙박|통신|접대|기타),memo,amt,cur,pay}. 예약·결제 증빙을 받으면 해당 flights/hotels/trains 항목의 status·fare(amount)·paidBy·file을 실제 값으로 set.
 - 예약·결제는 직접 하지 않고 링크나 절차만 안내합니다. 확인하지 못한 값은 "추정"이라고 적고 필요하면 notes에 lv warn으로 남깁니다. 여권번호·카드번호 등 민감정보는 저장하지 않습니다.
