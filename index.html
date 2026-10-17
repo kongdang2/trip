@@ -695,7 +695,7 @@ header{position:sticky;top:0;z-index:1000;background:var(--panel);border-bottom:
 .next{margin-left:auto;text-align:right;font-size:13px;color:var(--ink2)}
 .clock{font-size:12px;line-height:1.35;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;align-self:center}.clock b{color:var(--mute);font-weight:600;margin-right:3px}
 #placeList .plRow{display:flex;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);flex-wrap:wrap}#placeList .plRow:first-child{border-top:0}#placeList .t{flex:1;min-width:150px}#placeList .pz{color:var(--mute);font-size:12px;margin-top:2px}#placeList .m{display:flex;gap:6px;flex-wrap:wrap}
-#apGuide details{border-top:1px solid var(--line);padding:8px 0;scroll-margin-top:80px}#apGuide details:first-of-type{border-top:0}#apGuide summary{cursor:pointer;font-weight:600}#apGuide summary .muted{font-weight:400}#apGuide ol{margin:6px 0 0;padding-left:20px}#apGuide li{margin:4px 0;line-height:1.5}#apGuide .say{display:inline-flex;gap:6px;align-items:center;background:var(--soft,#f3f5f8);border-radius:6px;padding:2px 6px;margin:2px 0}#apGuide .say button{padding:1px 7px;font-size:12px}#apGuide .warn{color:#b45309}#apGuide .apVis{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 4px}#apGuide .apFlow{flex:1;min-width:230px;max-width:420px}#apGuide .apFlow .fh{font-size:12px;font-weight:700;margin:2px 0 4px}#apGuide .fn{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--card,#fff)}#apGuide .fn.hit{border-color:#0f9d58;background:rgba(15,157,88,.08)}#apGuide .fn .fl{flex:none;min-width:30px;text-align:center;font-size:11px;font-weight:700;border-radius:4px;padding:1px 4px;background:var(--soft,#eef1f5)}#apGuide .fn i{display:block;font-style:normal;font-size:12px;color:var(--mute)}#apGuide .fa{text-align:center;line-height:14px;color:var(--mute);font-size:12px}#apGuide .apCurb{flex:1;min-width:230px;max-width:360px}#apGuide .apCurb svg{width:100%;height:auto;display:block}#apGuide .apCap{font-size:11px;color:var(--mute);margin-top:2px}.apgLk{font-size:12px;margin-left:6px;white-space:nowrap}
+#apGuide details{border-top:1px solid var(--line);padding:8px 0;scroll-margin-top:80px}#apGuide details:first-of-type{border-top:0}#apGuide summary{cursor:pointer;font-weight:600}#apGuide summary .muted{font-weight:400}#apGuide ol{margin:6px 0 0;padding-left:20px}#apGuide li{margin:4px 0;line-height:1.5}#apGuide .say{display:inline-flex;gap:6px;align-items:center;background:var(--soft,#f3f5f8);border-radius:6px;padding:2px 6px;margin:2px 0}#apGuide .say button{padding:1px 7px;font-size:12px}#apGuide .warn{color:#b45309}#apGuide .apVis{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 4px}#apGuide .apFlow{flex:1;min-width:230px;max-width:420px}#apGuide .apFlow .fh{font-size:12px;font-weight:700;margin:2px 0 4px}#apGuide .fn{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--card,#fff)}#apGuide .fn.hit{border-color:#0f9d58;background:rgba(15,157,88,.08)}#apGuide .fn .fl{flex:none;min-width:30px;text-align:center;font-size:11px;font-weight:700;border-radius:4px;padding:1px 4px;background:var(--soft,#eef1f5)}#apGuide .fn i{display:block;font-style:normal;font-size:12px;color:var(--mute)}#apGuide .fa{text-align:center;line-height:14px;color:var(--mute);font-size:12px}#apGuide .apCurb{flex:1;min-width:230px;max-width:360px}#apGuide .apCurb svg{width:100%;height:auto;display:block}#apGuide .apPlan{flex:1;min-width:260px;max-width:440px}#apGuide .apPlan svg{width:100%;height:auto;display:block;color:var(--ink,#1f2937)}#apGuide .apShots{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}#apGuide .apShots:empty{display:none}#apGuide .apShots figure{margin:0;position:relative}#apGuide .apShots img{width:150px;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;cursor:zoom-in}#apGuide .apShots button{position:absolute;top:4px;right:4px;padding:0 6px;font-size:12px;line-height:20px}#apGuide .apCap{font-size:11px;color:var(--mute);margin-top:2px}.apgLk{font-size:12px;margin-left:6px;white-space:nowrap}
 #quickApps ul{margin:6px 0 0;padding-left:18px}#quickApps li{margin:3px 0}
 #hdrTog{display:none;position:absolute;right:10px;top:8px;padding:2px 12px;font-size:18px;line-height:1.2;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink2);cursor:pointer}
 .next b{color:var(--ink);font-size:15px}
@@ -1176,6 +1176,9 @@ window.__cloudUpload=async files=>{if(!cur||!user)return;const map={...(cur.file
     if(error){errs.push(f.name+': '+explain(error));continue}const old=map[f.name];if(old&&old!==path)sb.storage.from(BUCKET).remove([old]).then(()=>{},()=>{});map[f.name]=path;n++}
   if(n){cur.files=map;const {error}=await sb.from('trips').update({files:map}).eq('id',cur.id);if(error)errs.push('목록 저장 실패: '+explain(error))}
   if(errs.length)throw new Error((n?`${n}개 저장됨, 실패: `:'')+errs.join(' / '));return n};
+window.__cloudFileNames=()=>Object.keys((cur&&cur.files)||{});
+window.__cloudSigned=async name=>{const path=cur&&cur.files&&cur.files[name];if(!path)return '';const {data}=await sb.storage.from(BUCKET).createSignedUrl(path,3600);return (data&&data.signedUrl)||''};
+window.__cloudRemoveFile=async name=>{const path=cur&&cur.files&&cur.files[name];if(!path)return;const map={...cur.files};delete map[name];await sb.storage.from(BUCKET).remove([path]).catch(()=>{});cur.files=map;const {error}=await sb.from('trips').update({files:map}).eq('id',cur.id);if(error)throw new Error(explain(error))};
 window.__cloudFileUrl=f=>{if(!f)return '';if(/^(https?:|data:|blob:)/i.test(f))return f;return '#cf='+encodeURIComponent(f)};
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#cf="]');if(!a)return;e.preventDefault();openCloudFile(decodeURIComponent(a.getAttribute('href').slice(4)))});
 
@@ -1585,6 +1588,9 @@ const AP_GUIDE={
   src:'상하이공항그룹·澎湃新闻 교통 안내(2024~2026)',
   flows:[{steps:[['2F','입국심사','入境 · 外国人'],['1F','수하물 찾기','行李提取'],['1F','세관 녹색 통로','海关 · 无申报'],['1F','도착홀','到达大厅'],['1F','1번 문 밖 택시 승강장','出租车 · 1号门',1]]}],
   curb:{hall:'T1 도착홀 (1층)',door:'1号门',pos:.15,lanes:['보도','택시 승차 칸 (8칸)','일반 차로'],hit:1},
+  plan:{floors:[['2F','도착 통로'],['1F','도착층'],['도로','건물 앞'],['B1','지하']],
+   nodes:{a:[0,0,'비행기 하기','到达'],b:[0,.5,'검역·입국심사','检疫 · 边检'],c:[1,1,'수하물 찾기','行李提取'],d:[1,.5,'세관 녹색 통로','海关 · 无申报'],e:[1,0,'도착홀','到达大厅'],f:[2,0,'1号门 밖 택시','出租车 · 8칸',1],m:[2,.62,'3号门 → 연결통로','地铁10号线 T1站'],r:[3,.32,'P1 주차장','网约车 · 공항버스']},
+   path:['a','b','c','d','e','f'],alt:[['e','m','지하철'],['e','r','디디·버스']]},
   photo:'虹桥机场T1 出租车上客点',poi:'虹桥国际机场T1航站楼出租车上客点'},
  'SHA2:dep':{title:'상하이 훙차오 T2 출발 (국내선)',steps:[
   '기사에게 터미널을 정확히: <span class="say">虹桥机场2号航站楼，东航国内出发 <button class="btn" type="button" data-copy="虹桥机场2号航站楼，东航国内出发">복사</button></span> 도착(T1)과 출발(T2)이 다른 터미널',
@@ -1595,16 +1601,22 @@ const AP_GUIDE={
   src:'澎湃新闻 虹桥机场登机攻略(2024)',
   flows:[{steps:[['3F','출발층 하차','出发层 · 3~10号门'],['3F','체크인·짐 부치기','值机 A~H区'],['3F','보안검색','安检'],['3F','탑승 게이트','登机口',1]]}],
   curb:{hall:'T2 출발층 (3층)',door:'3~6号门',pos:.35,lanes:['보도·하차 지점','출발층 차로'],hit:0,car:'🚕 하차'},
+  plan:{floors:[['게이트','보안 후'],['3F','출발층'],['도로','고가도로']],
+   nodes:{a:[2,0,'택시 하차','3~10号门'],b:[1,0,'출발 홀','出发大厅'],c:[1,.5,'동방항공 체크인','值机 A~H区'],d:[1,1,'보안검색','安检'],e:[0,1,'탑승 게이트','登机口',1]},
+   path:['a','b','c','d','e']},
   photo:'虹桥机场T2 出发层 值机',poi:'虹桥国际机场T2航站楼'},
  'KWE3:arr':{title:'구이양 룽둥바오 T3 도착 → 택시 타는 곳',steps:[
   '<b>到达 / 行李提取</b> 표지 → 1층에서 짐 찾기',
   '출구로 나와 <b>出租车</b> 표지 → <b>1층 21번 문(21号门) 맞은편, 가장 바깥쪽 택시 차로</b>가 승차 지점. 앞쪽 차선 두 줄이 택시 대기 구역',
   '저녁 도착이면 택시 줄이 길 수 있음(대기 구역 약 400m). 줄 맨 앞에 배차 부스가 있으니 순서대로',
-  '디디는 짐 찾은 뒤 호출하고 앱이 정해주는 <b>网约车上车点</b>으로 이동(T3 승차장 위치는 앱 표시를 우선)',
+  '디디는 짐 찾은 뒤 호출하고 앱이 정해주는 <b>网约车上车点</b>으로 이동. T3 개항(2021) 때는 디디 승차장이 <b>T2 5번 문 맞은편</b>이었으니, 앱이 그쪽을 가리키면 T2 방향 표지를 따라가기',
   '<span class="warn">구이양은 T2·T3가 나뉘어 있음. 도착 터미널은 기내 방송·전광판으로 한 번 더 확인</span>'],
   src:'贵阳机场 T3 개항 교통 안내(2021)',
   flows:[{steps:[['2F','도착 통로','到达'],['1F','수하물 찾기','行李提取'],['1F','도착 출구','到达出口'],['1F','21번 문 맞은편 택시 승차','出租车 · 21号门对面',1]]}],
   curb:{hall:'T3 도착층 (1층)',door:'21号门',pos:.7,lanes:['보도','택시 차로','가장 바깥 택시 차로 · 승차'],hit:2},
+  plan:{floors:[['2F','도착 통로'],['1F','도착층'],['도로','건물 앞']],
+   nodes:{a:[0,0,'비행기 하기','到达'],b:[1,.45,'수하물 찾기','行李提取'],c:[1,1,'도착 출구','到达出口'],d:[2,1,'21号门 맞은편','出租车 · 바깥 차로',1],r:[2,.4,'디디 승차장','앱 지정 · T2 5号门?']},
+   path:['a','b','c','d'],alt:[['c','r','디디']]},
   photo:'贵阳机场T3 出租车上客点',poi:'贵阳龙洞堡国际机场T3航站楼出租车上客点'},
  'KWE3:dep':{title:'구이양 룽둥바오 T3 출발',steps:[
   '기사에게: <span class="say">龙洞堡机场T3航站楼，东航出发 <button class="btn" type="button" data-copy="龙洞堡机场T3航站楼，东航出发">복사</button></span> (T2·T3 분리, 전날 동방항공 앱에서 터미널 확인)',
@@ -1613,6 +1625,9 @@ const AP_GUIDE={
   '보안검색 규칙은 국내선과 같음(보조배터리 기내, 생수 불가)'],
   src:'동방항공 공항 안내',
   flows:[{steps:[['출발층','하차','出发'],['출발층','동방항공 체크인','东航值机 · 行李直挂?'],['출발층','보안검색','安检'],['','탑승 게이트','登机口',1]]}],
+  plan:{floors:[['게이트','보안 후'],['출발층','值机'],['도로','건물 앞']],
+   nodes:{a:[2,0,'택시 하차','出发'],b:[1,0,'출발 홀','出发大厅'],c:[1,.5,'동방항공 체크인','짐 인천까지?'],d:[1,1,'보안검색','安检'],e:[0,1,'탑승 게이트','登机口',1]},
+   path:['a','b','c','d','e']},
   photo:'贵阳龙洞堡机场T3 出发 值机',poi:'贵阳龙洞堡国际机场T3航站楼'},
  'XIY5:xfer':{title:'시안 셴양 T5 환승 (국내선 도착 → 국제선 출발)',steps:[
   '<b>A. 짐이 최종 목적지까지 연결된 경우</b>(탑승권 2장 받음): 내려서 <b>中转 / 国内转国际 Transfer</b> 표지 → <b>2층 中转03区</b> 동방항공 국내→국제 환승 카운터 → 출국 검사(검역·세관·보안·출국심사) → 국제선 게이트',
@@ -1623,6 +1638,9 @@ const AP_GUIDE={
   src:'시안공항·동방항공 T5 안내(2025)',
   flows:[{name:'A. 짐이 인천까지 연결된 경우',steps:[['2F','환승 표지 따라','中转 · 国内转国际'],['2F','동방항공 환승 카운터','中转03区 东航'],['','출국 검사','海关 · 安检 · 边检'],['','국제선 게이트','国际登机口',1]]},
          {name:'B. 짐이 연결 안 된 경우',steps:[['1F','수하물 찾기','行李提取'],['3F','국제선 출발층','国际出发 · 533·534号门'],['3F','다시 체크인','值机 D·E·G·H区'],['','출국 검사 → 게이트','边检 · 登机口',1]]}],
+  plan:{floors:[['3F','국제선'],['2F','도착·환승'],['1F','수하물']],
+   nodes:{a:[1,.3,'국내선 도착','到达'],b:[1,.85,'환승 카운터','中转03区 东航'],e:[2,.3,'수하물 찾기','行李提取'],f:[0,0,'다시 체크인','533·534号门 · D·E·G·H'],c:[0,.5,'출국 검사','海关·安检·边检'],d:[0,1,'게이트','登机口',1]},
+   path:['a','b','c','d'],alt:[['a','e','B'],['e','f','B'],['f','c','']],legend:'실선 A: 짐 연결됨 · 점선 B: 짐 찾아 재체크인'},
   photo:'西安咸阳机场T5 国内转国际 中转',poi:'西安咸阳国际机场T5航站楼'}
 };
 const apKey=p=>{if(!p||!p.code)return '';const m=/T\s?(\d)/i.exec((p.name||'')+' '+(p.local||''));return p.code+(m?m[1]:'')};
@@ -1636,9 +1654,20 @@ function apgItems(){const out=[],seen={};const fl=LG.filter(l=>l.type==='fly');c
 const apFlow=f=>`<div class="apFlow">${f.name?`<div class="fh">${esc(f.name)}</div>`:''}${f.steps.map((s,i)=>`${i?'<div class="fa">▼</div>':''}<div class="fn${s[3]?' hit':''}">${s[0]?`<span class="fl">${esc(s[0])}</span>`:'<span class="fl">→</span>'}<div><b>${esc(s[1])}</b><i>${esc(s[2]||'')}</i></div></div>`).join('')}</div>`;
 function apCurb(c){const W=340,lh=24,top=58,n=c.lanes.length,H=top+n*lh+8,dx=Math.round(20+(W-40)*(c.pos==null?.5:c.pos));
   const doors=[.1,.3,.5,.7,.9].map(p=>Math.round(20+(W-40)*p)).filter(x=>Math.abs(x-dx)>30);
-  const lanes=c.lanes.map((t,i)=>{const y=top+i*lh,hit=i===c.hit;return `<rect x="0" y="${y}" width="${W}" height="${lh-2}" rx="3" style="fill:${hit?'rgba(15,157,88,.16)':i?'rgba(120,130,150,.12)':'rgba(120,130,150,.06)'};stroke:${hit?'#0f9d58':'none'}"/><text x="${W-8}" y="${y+15}" text-anchor="end" style="font-size:11px;fill:currentColor;opacity:${hit?1:.7};font-weight:${hit?700:400}">${esc(t)}</text>${hit?`<text x="${dx+14}" y="${y+16}" style="font-size:14px">${esc(c.car||'🚕')}</text>`:''}`}).join('');
+  const lanes=c.lanes.map((t,i)=>{const y=top+i*lh,hit=i===c.hit;return `<rect x="0" y="${y}" width="${W}" height="${lh-2}" rx="3" style="fill:${hit?'rgba(15,157,88,.16)':i?'rgba(120,130,150,.12)':'rgba(120,130,150,.06)'};stroke:${hit?'#0f9d58':'none'}"/><text x="${dx>W/2?8:W-8}" y="${y+15}" text-anchor="${dx>W/2?'start':'end'}" style="font-size:11px;fill:currentColor;opacity:${hit?1:.7};font-weight:${hit?700:400}">${esc(t)}</text>${hit?`<text x="${dx>W/2?dx-32:dx+14}" y="${y+16}" style="font-size:14px">${esc(c.car||'🚕')}</text>`:''}`}).join('');
   const hy=top+(c.hit||0)*lh+11;
   return `<div class="apCurb"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(c.hall+' '+c.door)} 약도"><rect x="0" y="4" width="${W}" height="44" rx="6" style="fill:rgba(37,99,235,.08);stroke:rgba(37,99,235,.45)"/><text x="10" y="22" style="font-size:12px;font-weight:700;fill:currentColor">${esc(c.hall)}</text><text x="10" y="39" style="font-size:10px;fill:currentColor;opacity:.6">건물 안</text>${doors.map(x=>`<rect x="${x-9}" y="44" width="18" height="6" style="fill:rgba(37,99,235,.35)"/>`).join('')}<rect x="${dx-16}" y="42" width="32" height="10" rx="2" style="fill:#0f9d58"/><text x="${dx}" y="38" text-anchor="middle" style="font-size:11px;font-weight:700;fill:#0f9d58">${esc(c.door)}</text><line x1="${dx}" y1="52" x2="${dx}" y2="${hy}" style="stroke:#0f9d58;stroke-width:2.5;stroke-dasharray:4 3"/><circle cx="${dx}" cy="${hy}" r="4" style="fill:#0f9d58"/>${lanes}</svg><div class="apCap">개념도: 문 번호와 차로 순서만 표시, 실제 배치·축척과 다름</div></div>`}
+function apPlan(pl){const W=360,L=48,NW=90,U=W-L-NW-2,BH=66,NH=38,F=pl.floors,H=F.length*BH+4,N=pl.nodes;
+  const pos=k=>{const n=N[k];return {x:L+NW/2+U*n[1],y:n[0]*BH+BH/2,f:n[0]}};
+  const seg=(a,b)=>{const p=pos(a),q=pos(b);if(p.f===q.f)return `M${p.x} ${p.y}L${q.x} ${q.y}`;const gy=q.f>p.f?(p.f+1)*BH:p.f*BH;return `M${p.x} ${p.y}L${p.x} ${gy}L${q.x} ${gy}L${q.x} ${q.y}`};
+  const esc2=t=>esc(t||'');let g='';
+  F.forEach((f,i)=>{const y=i*BH+2;g+=`<rect x="0" y="${y}" width="${W}" height="${BH-4}" rx="6" style="fill:${/도로|게이트/.test(f[0])?'rgba(120,130,150,.07)':'rgba(37,99,235,.06)'};stroke:rgba(120,130,150,.25)"/><text x="8" y="${y+22}" style="font-size:13px;font-weight:800;fill:currentColor">${esc2(f[0])}</text><text x="8" y="${y+38}" style="font-size:9.5px;fill:currentColor;opacity:.6">${esc2(f[1])}</text>`});
+  const arrow=(d,c,dash)=>`<path d="${d}" style="fill:none;stroke:${c};stroke-width:${dash?2:3};${dash?'stroke-dasharray:5 4;':''}stroke-linejoin:round" marker-end="url(#apAr${dash?'2':'1'})"/>`;
+  (pl.alt||[]).forEach(a=>{g+=arrow(seg(a[0],a[1]),'#d97706',1)});
+  for(let i=1;i<pl.path.length;i++)g+=arrow(seg(pl.path[i-1],pl.path[i]),'#2563eb',0);
+  (pl.alt||[]).forEach(a=>{if(!a[2])return;const p=pos(a[0]),q=pos(a[1]);g+=`<text x="${q.x+5}" y="${p.f===q.f?p.y-NH/2-3:q.f>p.f?q.y-NH/2-3:q.y+NH/2+11}" style="font-size:9.5px;font-weight:700;fill:#d97706">${esc2(a[2])}</text>`});
+  Object.keys(N).forEach(k=>{const n=N[k],p=pos(k),hit=n[4];g+=`<rect x="${p.x-NW/2}" y="${p.y-NH/2}" width="${NW}" height="${NH}" rx="6" style="fill:${hit?'#e7f6ee':'#fff'};stroke:${hit?'#0f9d58':pl.path.includes(k)?'#2563eb':'#d97706'};stroke-width:${hit?2:1.2}"/><text x="${p.x}" y="${p.y-3}" text-anchor="middle" style="font-size:11.5px;font-weight:700;fill:#1f2937">${esc2(n[2])}</text><text x="${p.x}" y="${p.y+12}" text-anchor="middle" style="font-size:9.5px;fill:#6b7280">${esc2(n[3])}</text>`});
+  return `<div class="apPlan"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="층별 동선 약도"><defs><marker id="apAr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:#2563eb"/></marker><marker id="apAr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:#d97706"/></marker></defs>${g}</svg><div class="apCap">${esc2(pl.legend||'파란 실선: 추천 동선 · 주황 점선: 다른 방법')} · 층 단면 개념도(실제 거리·배치와 다름)</div></div>`}
 function apSearch(kw){const e=encodeURIComponent(kw),ua=navigator.userAgent,web=`https://uri.amap.com/search?keyword=${e}&src=trip&callnative=1`;
   if(/Android/i.test(ua)){location.href=`intent://poi?sourceApplication=trip&keywords=${e}&dev=0#Intent;scheme=androidamap;package=com.autonavi.minimap;S.browser_fallback_url=${encodeURIComponent(web)};end`;return}
   if(/iPhone|iPad|iPod/i.test(ua)){const t0=Date.now();location.href=`iosamap://poi?sourceApplication=trip&name=${e}&dev=0`;setTimeout(()=>{if(!document.hidden&&Date.now()-t0<4000)location.href=web},1800);return}
@@ -1649,9 +1678,20 @@ function apgLinks(l){if(l.type!=='fly')return '';return apgItems().filter(x=>x.l
 function airportCard(){const it=apgItems();if(!it.length)return '';
   const body=it.map(x=>{const g=apgGet(x.key),has=(g.steps||[]).length;
     const q=`${x.p.name}(${x.p.local||x.p.code}) ${apgLbl[x.kind]}을 웹에서 확인해 airportGuides["${x.key}"]에 {title, steps:[...], src, flows:[{name,steps:[[층,한국어,중국어 표지,마지막이면1]]}], photo:사진 검색어, poi:가오더 검색어}로 넣어줘. 내린 곳에서 택시·디디 타는 곳(층·문 번호), 중국어 표지판, 주의할 점 위주로.`;
-    return `<details id="apg-${esc(x.key)}"><summary>${esc(g.title||x.p.name+' '+apgLbl[x.kind])} <span class="muted small">${md(x.leg.t)}</span></summary>${(g.flows||g.curb)?`<div class="apVis">${(g.flows||[]).map(apFlow).join('')}${g.curb?apCurb(g.curb):''}</div>`:''}${has?`<ol>${g.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="small muted" style="margin-top:4px">출처: ${esc(g.src||'웹 자료')} · 현장 표지와 앱 안내가 다르면 현장이 우선</div>`:'<div class="small muted" style="margin:6px 0">아직 안내가 없습니다.</div>'}<div class="row" style="margin-top:6px">${g.photo?`<a class="btn" href="https://image.baidu.com/search/index?tn=baiduimage&word=${encodeURIComponent(g.photo)}" target="_blank" rel="noopener">📷 실제 사진 보기</a>`:''}${g.poi?`<button class="btn" type="button" data-apsearch="${esc(g.poi)}">🗺 가오더 실내지도</button>`:''}<button class="btn" type="button" data-ask="journey" data-q="${esc(q)}">${has?'🔎 AI로 최신 정보 다시 확인':'🔎 AI로 공항 안내 만들기'}</button></div></details>`}).join('');
+    return `<details id="apg-${esc(x.key)}"><summary>${esc(g.title||x.p.name+' '+apgLbl[x.kind])} <span class="muted small">${md(x.leg.t)}</span></summary>${(g.plan||g.flows||g.curb)?`<div class="apVis">${g.plan?apPlan(g.plan):(g.flows||[]).map(apFlow).join('')}${g.curb?apCurb(g.curb):''}</div>`:''}${has?`<ol>${g.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="small muted" style="margin-top:4px">출처: ${esc(g.src||'웹 자료')} · 현장 표지와 앱 안내가 다르면 현장이 우선</div>`:'<div class="small muted" style="margin:6px 0">아직 안내가 없습니다.</div>'}${window.__CLOUD_DATA?`<div class="apShots" data-shots="${esc(x.key)}"></div>`:''}<div class="row" style="margin-top:6px">${window.__CLOUD_DATA?`<label class="btn" style="cursor:pointer">📸 내 캡처 붙이기<input type="file" accept="image/*" multiple hidden data-apshot="${esc(x.key)}"></label>`:''}${g.photo?`<a class="btn" href="https://image.baidu.com/search/index?tn=baiduimage&word=${encodeURIComponent(g.photo)}" target="_blank" rel="noopener">📷 실제 사진 보기</a>`:''}${g.poi?`<button class="btn" type="button" data-apsearch="${esc(g.poi)}">🗺 가오더 실내지도</button>`:''}<button class="btn" type="button" data-ask="journey" data-q="${esc(q)}">${has?'🔎 AI로 최신 정보 다시 확인':'🔎 AI로 공항 안내 만들기'}</button></div></details>`}).join('');
   return `<div class="card" id="apGuide" style="margin-bottom:14px"><h3 style="margin:0 0 4px">🧭 공항 안 길 안내 <span class="muted small">내린 뒤 택시 타는 곳·환승 동선</span></h3>${body}</div>`}
-document.addEventListener('click',async e=>{const c=e.target.closest('[data-copy]');if(c){e.preventDefault();const t=c.dataset.copy;let ok=false;try{await navigator.clipboard.writeText(t);ok=true}catch(_){}const o=c.textContent;c.textContent=ok?'복사됨':'길게 눌러 복사';setTimeout(()=>c.textContent=o,1500);return}
+const shotPre=k=>'공항캡처_'+k.replace(':','_')+'_';
+async function apShots(box){if(!box||!window.__cloudFileNames)return;const k=box.dataset.shots,ns=window.__cloudFileNames().filter(n=>n.startsWith(shotPre(k))).sort();
+  if(!ns.length){box.innerHTML='';return}box.innerHTML=ns.map(n=>`<figure data-n="${esc(n)}"><img alt="내 캡처"><button class="btn" type="button" data-shotdel="${esc(n)}" title="삭제">✕</button></figure>`).join('');
+  for(const f of box.querySelectorAll('figure')){const u=await window.__cloudSigned(f.dataset.n);const im=f.querySelector('img');if(u){im.src=u;im.onclick=()=>window.open(u,'_blank','noopener')}}}
+const shrink=f=>new Promise(res=>{if(!/^image\//.test(f.type)||/gif/.test(f.type))return res(f);const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const s=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>res(b||f),'image/jpeg',.85)};im.onerror=()=>res(f);im.src=u});
+document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('#apGuide details')&&d.open)apShots(d.querySelector('[data-shots]'))},true);
+document.addEventListener('change',async e=>{const inp=e.target.closest('[data-apshot]');if(!inp||!inp.files.length)return;const k=inp.dataset.apshot,box=document.querySelector(`[data-shots="${CSS.escape(k)}"]`);
+  if(!window.__cloudUpload){alert('캡처 저장은 클라우드 버전(로그인)에서만 됩니다.');return}
+  const fs=[];for(const [i,f] of [...inp.files].entries()){const b=await shrink(f);fs.push(new File([b],shotPre(k)+Date.now()+i+'.jpg',{type:'image/jpeg'}))}
+  if(box)box.innerHTML='<span class="small muted">올리는 중…</span>';try{await window.__cloudUpload(fs)}catch(err){alert(err.message)}inp.value='';apShots(box)});
+document.addEventListener('click',async e=>{const sd=e.target.closest('[data-shotdel]');if(sd){if(!confirm('이 캡처를 지울까요?'))return;try{await window.__cloudRemoveFile(sd.dataset.shotdel)}catch(err){alert(err.message)}apShots(sd.closest('[data-shots]'));return}
+  const c=e.target.closest('[data-copy]');if(c){e.preventDefault();const t=c.dataset.copy;let ok=false;try{await navigator.clipboard.writeText(t);ok=true}catch(_){}const o=c.textContent;c.textContent=ok?'복사됨':'길게 눌러 복사';setTimeout(()=>c.textContent=o,1500);return}
   const sr=e.target.closest('[data-apsearch]');if(sr){apSearch(sr.dataset.apsearch);return}
   const a=e.target.closest('[data-apg]');if(a){e.preventDefault();const d=document.getElementById('apg-'+a.dataset.apg);if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}}});
 function moveCards(){
