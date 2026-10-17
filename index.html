@@ -1052,7 +1052,8 @@ const css=document.createElement('style');css.textContent=`
 #cgRows .cgRow .t{flex:1;min-width:160px;cursor:pointer}#cgRows .cgRow .t b{display:block}
 #cgRows .cgRow .m{display:flex;gap:4px;flex-wrap:wrap}
 #cgRows .cgRow .m .btn{padding:3px 8px;font-size:12px}
-#cgBar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;color:var(--mute);margin-top:4px}
+#cgBar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;color:var(--mute);max-width:1200px;margin:0 auto;padding:4px 16px 6px;box-sizing:border-box}
+@media(max-width:640px){#cgBar{padding:4px 12px 6px}}
 #cgBar .btn{padding:2px 8px;font-size:12px}
 body.cloud-notrip #tabs,body.cloud-notrip section,body.cloud-notrip .foot,body.cloud-notrip #changedBar{display:none!important}
 body.cloud .keyRow,body.cloud #pKey,body.cloud #backEmbedded,body.cloud #jsonFile{display:none!important}
@@ -1149,12 +1150,14 @@ window.addEventListener('beforeunload',e=>{if(dirty||saving){flush();e.preventDe
 document.addEventListener('visibilitychange',async()=>{if(document.visibilityState!=='visible'||!cur||dirty||saving)return;const {data}=await sb.from('trips').select('updated_at').eq('id',cur.id).maybeSingle();if(data&&savedAt&&data.updated_at>savedAt){if(confirm('다른 기기에서 이 출장이 수정됐습니다. 최신 내용으로 새로 고칠까요?'))location.reload();else savedAt=data.updated_at}});
 
 /* ---- 증빙 파일 저장소 ---- */
-const safeName=n=>n.normalize('NFC').replace(/[^\w.\-가-힣]+/g,'_').slice(0,120);
+const safeName=n=>{const m=/\.([A-Za-z0-9]{1,8})$/.exec(n);const ext=m?'.'+m[1].toLowerCase():'';const base=(m?n.slice(0,-m[0].length):n).replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80);return (base||'file')+ext};
 window.__cloudUpload=async files=>{if(!cur||!user)return;const map={...(cur.files||{})};let n=0;
-  for(const f of files){if(f.size>30*1024*1024)throw new Error(`${f.name}: 30MB를 넘는 파일은 올릴 수 없습니다`);const path=`${user.id}/${cur.id}/${Date.now()}_${safeName(f.name)||'file'}`;
+  const errs=[];
+  for(const [i,f] of files.entries()){if(f.size>30*1024*1024){errs.push(`${f.name}: 30MB 초과`);continue}const path=`${user.id}/${cur.id}/${Date.now()}${i}_${safeName(f.name)}`;
     const {error}=await sb.storage.from(BUCKET).upload(path,f,{upsert:true,contentType:f.type||'application/octet-stream'});
-    if(error)throw new Error(f.name+': '+explain(error));if(map[f.name])sb.storage.from(BUCKET).remove([map[f.name]]).catch?.(()=>{});map[f.name]=path;n++}
-  if(n){cur.files=map;await sb.from('trips').update({files:map}).eq('id',cur.id)}return n};
+    if(error){errs.push(f.name+': '+explain(error));continue}const old=map[f.name];if(old&&old!==path)sb.storage.from(BUCKET).remove([old]).then(()=>{},()=>{});map[f.name]=path;n++}
+  if(n){cur.files=map;const {error}=await sb.from('trips').update({files:map}).eq('id',cur.id);if(error)errs.push('목록 저장 실패: '+explain(error))}
+  if(errs.length)throw new Error((n?`${n}개 저장됨, 실패: `:'')+errs.join(' / '));return n};
 window.__cloudFileUrl=f=>{if(!f)return '';if(/^(https?:|data:|blob:)/i.test(f))return f;return '#cf='+encodeURIComponent(f)};
 document.addEventListener('click',async e=>{const a=e.target.closest('a[href^="#cf="]');if(!a)return;e.preventDefault();const name=decodeURIComponent(a.getAttribute('href').slice(4));const path=cur&&cur.files&&cur.files[name];
   if(!path)return alert(`"${name}" 파일이 클라우드에 없습니다. 경비관리 탭의 증빙 업로드나 프롬프트 창의 📎로 올리면 여기서 열 수 있습니다.`);
