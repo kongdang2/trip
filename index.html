@@ -694,6 +694,7 @@ header{position:sticky;top:0;z-index:1000;background:var(--panel);border-bottom:
 .top .sub{color:var(--mute);font-size:13px}
 .next{margin-left:auto;text-align:right;font-size:13px;color:var(--ink2)}
 .clock{font-size:12px;line-height:1.35;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;align-self:center}.clock b{color:var(--mute);font-weight:600;margin-right:3px}
+#placeList .plRow{display:flex;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);flex-wrap:wrap}#placeList .plRow:first-child{border-top:0}#placeList .t{flex:1;min-width:150px}#placeList .pz{color:var(--mute);font-size:12px;margin-top:2px}#placeList .m{display:flex;gap:6px;flex-wrap:wrap}
 #quickApps ul{margin:6px 0 0;padding-left:18px}#quickApps li{margin:3px 0}
 #hdrTog{display:none;position:absolute;right:10px;top:8px;padding:2px 12px;font-size:18px;line-height:1.2;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink2);cursor:pointer}
 .next b{color:var(--ink);font-size:15px}
@@ -779,7 +780,7 @@ nav button::before{content:attr(data-ic);margin-right:4px}
   #hdrTog{display:block}
   body:not(.hdr-open) #hSub,body:not(.hdr-open) #nextBox,body:not(.hdr-open) #cgBar{display:none!important}
   #alertsWrap,.tile.tWarn{display:none!important}
-  body:not(.hdr-open) .ask{display:none!important}
+  body:not(.hdr-open):not(.ask-open) .ask{display:none!important}
   #clock{position:absolute;right:64px;top:5px;font-size:11px}
   #map{height:300px}.legs{max-height:420px}
   .btn{min-height:38px}.row{gap:6px}
@@ -1548,9 +1549,32 @@ function openApp(id){const a=APPS[id];if(!a)return;const ua=navigator.userAgent;
   if(/iPhone|iPad|iPod/i.test(ua)){const t0=Date.now();location.href=a.i||a.s;setTimeout(()=>{if(!document.hidden&&Date.now()-t0<4000)location.href=store},1800);return}
   if(a.web){window.open(a.web,'_blank','noopener');return}alert('휴대폰에서 누르면 설치된 앱이 열립니다.')}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(b)show(b.dataset.goto);const ap=e.target.closest('[data-app]');if(ap)openApp(ap.dataset.app)});
+const inCN=p=>p&&p.lat!=null&&p.lat>=18&&p.lat<=53.6&&p.lng>=73&&p.lng<=124.5;
+const zhName=p=>((p&&(p.local||p.name))||'').split(' · ')[0].trim();
+function placesCard(tr){
+  if(tr.mapApp!=='amap')return '';
+  const ks=Object.keys(P).filter(k=>{const p=P[k];return inCN(p)||(p.lat==null&&p.city&&!/서울|인천|김포|한국/.test(p.city))});
+  if(!ks.length)return '';
+  const row=k=>{const p=P[k];const ok=!!(p.local||p.lat!=null);
+    return `<div class="plRow"><div class="t"><b>${esc(p.name)}</b>${p.local?`<div class="pz">${esc(p.local)}</div>`:'<div class="pz">중국어 이름·주소 미확인</div>'}</div><div class="m">${ok?`<button class="btn primary" type="button" data-nav="${esc(k)}">🧭 길찾기</button><button class="btn" type="button" data-taxi="${esc(k)}">🚕 택시</button>`:`<button class="btn" type="button" data-ask="journey" data-q="${esc(`'${p.name}'의 가오더에서 검색되는 중국어 정식 명칭과 중국어 주소, 위경도(WGS84)를 웹에서 확인해 places.${k}에 넣어줘.`)}">🔎 AI로 주소 찾기</button>`}</div></div>`};
+  return `<div class="card" id="placeList" style="margin-bottom:14px"><h3 style="margin:0 0 4px">📍 장소 바로가기 <span class="muted small">현재 위치에서 길찾기·택시</span></h3>
+   <div class="small muted" style="margin-bottom:6px">길찾기는 가오더 앱으로 경로를 엽니다(위치 권한 필요). 택시는 중국어 목적지를 복사한 뒤 알리페이 디디를 엽니다. 목적지 칸에 붙여넣으세요.</div>
+   ${ks.map(row).join('')}
+   <div class="row" style="margin-top:8px"><button class="btn" type="button" data-ask="journey" data-q="중국 현지에서 갈 장소를 추가해줘: (여기에 장소명). 가오더에서 검색되는 중국어 정식 명칭과 중국어 주소, 위경도(WGS84)를 웹에서 확인해 places에 넣어줘.">＋ AI로 장소 추가</button></div></div>`}
+function navTo(k){const p=P[k]||{};const nm=zhName(p);const ua=navigator.userAgent,and=/Android/i.test(ua),ios=/iPhone|iPad|iPod/i.test(ua);
+  const exact=p.lat!=null&&!p.approx,e=encodeURIComponent(nm);
+  const web=exact?`https://uri.amap.com/navigation?to=${p.lng},${p.lat},${e}&mode=car&policy=1&src=trip&coordinate=wgs84&callnative=1`:`https://uri.amap.com/search?keyword=${e}&src=trip&callnative=1`;
+  const q=`sourceApplication=trip&dlat=${p.lat}&dlon=${p.lng}&dname=${e}&dev=1&t=0`;
+  if(and){const path=exact?`route/plan/?${q}`:`poi?sourceApplication=trip&keywords=${e}&dev=0`;location.href=`intent://${path}#Intent;scheme=androidamap;package=com.autonavi.minimap;S.browser_fallback_url=${encodeURIComponent(web)};end`;return}
+  if(ios){const u=exact?`iosamap://path?${q}`:`iosamap://poi?sourceApplication=trip&name=${e}&dev=0`;const t0=Date.now();location.href=u;setTimeout(()=>{if(!document.hidden&&Date.now()-t0<4000)location.href=web},1800);return}
+  window.open(web,'_blank','noopener')}
+async function taxiTo(k,btn){const nm=zhName(P[k]);let ok=false;
+  try{await navigator.clipboard.writeText(nm);ok=true}catch(_){const ta=document.createElement('textarea');ta.value=nm;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{ok=document.execCommand('copy')}catch(__){}ta.remove()}
+  const o=btn.textContent;btn.textContent=ok?'복사됨 → 디디':'복사 실패';setTimeout(()=>btn.textContent=o,1800);setTimeout(()=>openApp('didiAli'),350)}
+document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n)return navTo(n.dataset.nav);const x=e.target.closest('[data-taxi]');if(x)taxiTo(x.dataset.taxi,x)});
 function moveCards(){
   const tr=DATA.transport||{};const appName=tr.mapApp==='amap'?'가오더':'지도 앱';
-  $('#moveIntro').innerHTML=quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
+  $('#moveIntro').innerHTML=placesCard(tr)+quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
   $('#moveCards').innerHTML=(tr.moves||[]).map(m=>`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${m.from===m.to?esc(P[m.from]?.name||m.from):esc(P[m.from]?.name||m.from)+' → '+esc(P[m.to]?.name||m.to)}</h3><span class="pill">${md(m.date)}</span></div>
    <div class="small" style="margin:8px 0">${[m.km,m.time,m.cost].filter(Boolean).map(esc).join(' · ')} ${m.estimate!==false?'<span class="muted">(추정)</span>':''}</div>
    <div class="small">${m.tip||''}</div>
@@ -2193,7 +2217,7 @@ function box(el){
   el._askFiles=(fs,q)=>{files.push(...fs);renderFiles();ta.value=q;if(body.style.display==='none')el.querySelector('.askToggle').click();send()};
 }
 $$('.ask[data-agent]').forEach(box);
-document.addEventListener('click',e=>{const b=e.target.closest('[data-ask]');if(!b)return;const id=b.dataset.ask;trip().show(TAB_OF[id]||'map');const el=$(`.ask[data-agent="${id}"]`);if(el&&el._ask){el._ask(b.dataset.q||'');if(el.querySelector('.askBody').style.display==='none')el.querySelector('.askToggle').click();el.scrollIntoView({behavior:'smooth',block:'start'})}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-ask]');if(!b)return;document.body.classList.add('ask-open');const id=b.dataset.ask;trip().show(TAB_OF[id]||'map');const el=$(`.ask[data-agent="${id}"]`);if(el&&el._ask){el._ask(b.dataset.q||'');if(el.querySelector('.askBody').style.display==='none')el.querySelector('.askToggle').click();el.scrollIntoView({behavior:'smooth',block:'start'})}});
 };if(!window.__CLOUD)window.__bootAsk();
 </script>
 <script>document.getElementById('hdrTog').addEventListener('click',function(){document.body.classList.toggle('hdr-open')});</script>
