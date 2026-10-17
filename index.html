@@ -1128,10 +1128,12 @@ function openTrip(r){
   bar.style.display='';barRender();
 }
 function barRender(){const st=saving?'저장 중…':dirty?'저장 대기':savedAt?'저장됨 '+hhmm(savedAt):'';
-  bar.innerHTML=`<span>☁ ${esc(user?user.email:'')}</span>${cur?`<span id="cgSt">${st}</span>`:''}<button class="btn" id="cgListBtn">출장 목록</button>${cur?`<button class="btn" id="cgDl">JSON 내려받기</button>`:''}<button class="btn" id="cgOut2">로그아웃</button>`;
+  bar.innerHTML=`<span>☁ ${esc(user?user.email:'')}</span>${cur?`<span id="cgSt">${st}</span>`:''}<button class="btn" id="cgListBtn">출장 목록</button>${cur?`<label class="btn" title="확인서·영수증 PDF를 AI 처리 없이 저장소에만 올립니다. 데이터의 file 필드와 파일명이 같으면 📎 링크가 바로 열립니다">📁 증빙 파일 올리기<input type="file" id="cgUp" multiple style="display:none"></label><button class="btn" id="cgDl">JSON 내려받기</button>`:''}<button class="btn" id="cgOut2">로그아웃</button>`;
   $('#cgListBtn').onclick=()=>{if(cur){store.del('trip-cloud-current');location.hash='';location.reload()}else showList()};
   $('#cgOut2').onclick=()=>$('#cgOut').click();
-  if(cur)$('#cgDl').onclick=()=>{const b=$('#dlJson');if(b)b.click()};
+  if(cur){$('#cgDl').onclick=()=>{const b=$('#dlJson');if(b)b.click()};
+    $('#cgUp').addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const st=$('#cgSt');if(st)st.textContent=`파일 ${fs.length}개 올리는 중…`;
+      try{const n=await window.__cloudUpload(fs);if(st)st.textContent=`파일 ${n}개 저장됨`;setTimeout(barRender,4000)}catch(err){if(st)st.innerHTML='<span style="color:#c0392b">'+esc(err.message)+'</span>'}})}
 }
 
 /* ---- 자동 저장 ---- */
