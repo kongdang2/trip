@@ -1554,16 +1554,22 @@ const swOpen=(tabs,start)=>`<div class="sw"><div class="swTabs">${tabs.map((t,i)
 const swNext=x=>`</div><div class="swSlide">${x}</div></div></div>`;
 const airRule=f=>CHECKIN[(f.flightNo||f.id||'').slice(0,2).toUpperCase()]||{};
 const jointOf=f=>{const i=F.indexOf(f),p=F[i-1];return p&&f.ticket&&p.ticket===f.ticket?p:null};
-function airStart(f){const w=ciWindow(jointOf(f)||f);return w&&w.st[1]==='ok'?1:0}
+function airStart(f){const w=ciWindow(jointOf(f)||f);return checkedIn(f)||w&&w.st[1]==='ok'?1:0}
 const todayISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 const hotelStart=h=>h.in===todayISO()?1:0;
 const cloudFiles=()=>window.__cloudFileNames?window.__cloudFileNames():null;
-function bpBox(f){const fs=cloudFiles();if(!fs)return '';const n=fs.find(x=>x.startsWith('탑승권_'+f.id+'.'));
-  return `${n?`<a class="btn" href="#cf=${encodeURIComponent(n)}" data-cf="${esc(n)}">🎫 내 탑승권 보기</a>`:''}<label class="btn">📷 탑승권 캡처 ${n?'바꾸기':'올리기'}<input type="file" accept="image/*,.pdf" data-bpup="${esc(f.id)}" style="display:none"></label>`}
+// 탑승권 파일: boardingFile, (예전 방식) ticketFile이 있을 때의 file, 클라우드에 올린 '탑승권_편ID.*'
+function bpFiles(f){const fs=cloudFiles()||[];return [...new Set([fs.find(x=>x.startsWith('탑승권_'+f.id+'.')),f.boardingFile,f.ticketFile&&f.file!==f.ticketFile?f.file:null].filter(Boolean))]}
+function bpBox(f){const ns=bpFiles(f);const up=cloudFiles()&&window.__cloudUpload;
+  return ns.map((n,i)=>`<a class="btn${i?'':' pri'}" href="${encFile(n)}" data-cf="${esc(n)}">🎫 탑승권 보기${ns.length>1?' '+(i+1):''}</a>`).join('')+(up?`<label class="btn">📷 탑승권 캡처 ${ns.length?'추가':'올리기'}<input type="file" accept="image/*,.pdf" data-bpup="${esc(f.id)}" style="display:none"></label>`:'')}
+const checkedIn=f=>/체크인 ?완료/.test(f.status||'');
+function bpInfo(f){const r=[['좌석',f.seat],['탑승 시작',f.boarding&&f.boarding.length>10?hm(f.boarding):f.boarding],['게이트',f.gate],['탑승 그룹',f.zone],['순번',f.seq]].filter(x=>x[1]);
+  return r.length?`<dl class="kv" style="margin:8px 0 0">${r.map(([k,v])=>`<dt>${k}</dt><dd><b>${esc(v)}</b></dd>`).join('')}</dl>`:''}
 function bkAir(f){const r=airRule(f);const url=f.checkin||r.url||f.manage;const tk=(f.ticket||'').replace(/\D/g,'');const joint=jointOf(f);const w=ciWindow(joint||f);
-  return `<div class="bk">${w?`<div><span class="pill ${w.st[1]}">${esc(w.st[0])}</span></div><div class="small" style="margin-top:4px">온라인 체크인 ${esc(w.txt)} <span class="muted">(${esc(code((joint||f).from))} 현지 시각)</span></div>`:''}
+  const done=checkedIn(f);
+  return `<div class="bk">${done?`<div><span class="pill ok">체크인 완료</span></div>${bpInfo(f)}`:w?`<div><span class="pill ${w.st[1]}">${esc(w.st[0])}</span></div><div class="small" style="margin-top:4px">온라인 체크인 ${esc(w.txt)} <span class="muted">(${esc(code((joint||f).from))} 현지 시각)</span></div>`:''}
    ${joint?`<div class="small muted" style="margin-top:4px">${esc(joint.flightNo||joint.id)}과 같은 항공권이라 ${esc(joint.flightNo||joint.id)} 체크인 때 이 편도 함께 처리되는 경우가 많습니다. 화면에 이 편이 같이 나오는지 확인하세요.</div>`:''}
-   <div class="row" style="margin-top:8px">${url?`<a class="btn pri" href="${url}" target="_blank" rel="noopener" data-copyopen="${esc(f.pnr||tk)}">✈️ 체크인 페이지</a>`:''}${r.app?`<button class="btn" type="button" data-airapp="${esc(r.app.pkg)}|${esc(r.app.ios)}">📱 ${esc(r.app.name)}</button>`:''}${bpBox(f)}</div>
+   <div class="row" style="margin-top:8px">${done?bpBox(f):''}${url?`<a class="btn${done?'':' pri'}" href="${url}" target="_blank" rel="noopener" data-copyopen="${esc(f.pnr||tk)}">✈️ 체크인 페이지</a>`:''}${r.app?`<button class="btn" type="button" data-airapp="${esc(r.app.pkg)}|${esc(r.app.ios)}">📱 ${esc(r.app.name)}</button>`:''}${done?'':bpBox(f)}</div>
    <div class="small muted" style="margin-top:6px">체크인 페이지를 열면 예약번호가 복사돼 있어 붙여 넣기만 하면 됩니다. 앱 버튼은 스토어가 열리니 <b>열기</b>를 누르세요. ${esc(r.alt||'')}${f.baggage&&f.baggage.checked?' 위탁 수하물이 있으면 카운터에서 짐 부칠 때 종이 탑승권을 받습니다.':''}</div></div>`}
 function bkNums(s){return [...new Set(String(s||'').match(/[A-Z0-9][A-Z0-9-]{5,}/gi)||[])]}
 function bkHotel(h){return `<div class="bk"><div class="row"><button class="btn pri" type="button" data-front="${esc(h.id)}">🛎 프런트에 보여줄 화면</button></div>
@@ -1610,7 +1616,7 @@ function airCards(){
     ${f.fare||f.fareNote?`<dt>${cand?'예상 요금':'요금'}</dt><dd>${f.fare?esc(f.currency)+' '+fmt(f.fare):''}${f.fareNote?' <span class="muted">('+esc(f.fareNote)+')</span>':''}${f.paidBy?' · '+esc(f.paidBy):''}</dd>`:''}
     ${f.why?`<dt>추천 이유</dt><dd>${esc(f.why)}</dd>`:''}${f.phone?`<dt>고객센터</dt><dd>${esc(f.phone)}</dd>`:''}</dl>
     <div class="row" style="margin-top:12px">${cand?flightSearch(f).map(([n,u],i)=>`<a class="btn ${i?'':'pri'}" href="${u}" target="_blank" rel="noopener">${n}에서 예약</a>`).join(''):''}
-    ${f.manage?`<a class="btn ${cand?'':'pri'}" href="${f.manage}" target="_blank" rel="noopener">${cand?'항공사 사이트':'항공사 예약 관리'}</a>`:''}${f.file?`<a class="btn" href="${encFile(f.file)}">e티켓 PDF</a>`:''}</div>${cand?'':swNext(bkAir(f))}</div>`}).join(''):`<div class="card"><h3>항공편 없음</h3><p class="small muted" style="margin:0 0 10px">국내 출장은 KTX·버스로 가는 경우가 많지만, 항공을 쓰려면 아래에서 검색하거나 위 프롬프트 창에 "행사 일정에 맞는 항공편 후보 찾아서 flights에 넣어 줘"라고 하세요.</p><div class="row">${flightSearch({from:T.homeAirport||'GMP',to:T.destAirport||'',dep:T.start||''}).map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${n}</a>`).join('')}</div></div>`;
+    ${f.manage?`<a class="btn ${cand?'':'pri'}" href="${f.manage}" target="_blank" rel="noopener">${cand?'항공사 사이트':'항공사 예약 관리'}</a>`:''}${f.ticketFile||f.file?`<a class="btn" href="${encFile(f.ticketFile||f.file)}">e티켓 PDF</a>`:''}</div>${cand?'':swNext(bkAir(f))}</div>`}).join(''):`<div class="card"><h3>항공편 없음</h3><p class="small muted" style="margin:0 0 10px">국내 출장은 KTX·버스로 가는 경우가 많지만, 항공을 쓰려면 아래에서 검색하거나 위 프롬프트 창에 "행사 일정에 맞는 항공편 후보 찾아서 flights에 넣어 줘"라고 하세요.</p><div class="row">${flightSearch({from:T.homeAirport||'GMP',to:T.destAirport||'',dep:T.start||''}).map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${n}</a>`).join('')}</div></div>`;
 }
 
 /* ---------- hotels ---------- */
@@ -2525,7 +2531,7 @@ const sys=(id)=>{const d=trip().data();const a=AGENTS[id];return `당신은 "${d
 - 한국어로 간결하게, 결론부터 답합니다. 긴 설명보다 목록을 씁니다.
 - 사용자가 수정·추가·반영·갱신·채워 달라고 하면 반드시 update_trip_data 도구로 데이터를 실제로 고칩니다. 경로는 점 표기(flights.0.status). 배열에 추가는 push, 항목 삭제는 delete. 스키마는 trip-data/1 (flights, trains[KTX·버스: id,kind,no,from,to,dep,arr,seat,status,fare,currency,booking,manage,why], hotels, places, legs[type fly|rail|bus|ground|stay|meet|event], transport.moves, rules.sections, info{updated,sections[{title,items[[아이콘,HTML]],note}]}, notes[{agent,lv,msg}], airportGuides{"SHA1:arr"처럼 공항코드+터미널번호:arr|dep|xfer → {title,steps:[HTML 한 줄씩],src,flows:[{name,steps:[[층,한국어,중국어 표지,마지막이면1]]}],photo:바이두 사진 검색어,poi:가오더 검색어}}, sites{updated,items:[{base(숙소 places 키),cat 맛집|명소|쇼핑|카페,name,local(지도앱 검색용 현지 이름),addr,lat,lng(WGS84),approx,dist,price,hours,menu[{name:"현지어 요리명 한국어 읽기",price:"¥38",desc:"설명"}],why,tip,src}]} (sites.flags는 사용자의 별표·다녀옴 표시이니 건드리지 않음). 새 장소는 places에 lat/lng와 함께 넣습니다.
 - 날짜·시각은 ISO 8601에 현지 오프셋(2026-10-20T08:30+09:00). 금액은 숫자.
-- 현지 소액 지출(택시·식사 등 영수증)은 path "expenses"에 push {date,cat(교통|식사|숙박|통신|접대|기타),memo,amt,cur,pay}. 예약·결제 증빙을 받으면 해당 flights/hotels/trains 항목의 status·fare(amount)·paidBy·file을 실제 값으로 set.
+- 현지 소액 지출(택시·식사 등 영수증)은 path "expenses"에 push {date,cat(교통|식사|숙박|통신|접대|기타),memo,amt,cur,pay}. 예약·결제 증빙을 받으면 해당 flights/hotels/trains 항목의 status·fare(amount)·paidBy·file을 실제 값으로 set. 탑승권(모바일 탑승권·탑승권 캡처)은 file(e티켓·예약 문서)을 바꾸지 말고 flights의 boardingFile에 파일명, seat·gate·boarding(ISO)·zone·seq를 set하고 status는 '체크인 완료'로.
 - 예약·결제는 직접 하지 않고 링크나 절차만 안내합니다. 확인하지 못한 값은 "추정"이라고 적고 필요하면 notes에 lv warn으로 남깁니다. 여권번호·카드번호 등 민감정보는 저장하지 않습니다.
 - 웹 검색 도구가 있으면 최신 정보(운항편, 요금, 규정, 날씨, 환율)를 확인하고 출처를 짧게 적습니다.
 
@@ -2568,7 +2574,7 @@ function box(el){
     busy=true;ta.value='';ta.style.height='auto';add('u',esc(q)+(files.length?`<div class="small muted">📎 ${files.map(f=>esc(f.name)).join(', ')}</div>`:''));const think=add('s',files.length?'자료 읽는 중…':'생각 중…');stat.textContent='';
     const model=store.get('trip-api-model','claude-opus-5-5');const useWeb=el.querySelector('.askWeb').checked;
     const msgs2=hist[id].slice(-10).map(m=>({role:m.role,content:m.text}));
-    let content=q;try{if(files.length&&window.__cloudUpload)await window.__cloudUpload(files);if(files.length)content=[...await A.filesToBlocks(files),{type:'text',text:q+'\n(첨부 파일명: '+files.map(f=>f.name).join(', ')+' — 데이터의 file 필드에는 이 파일명을 그대로 적을 것)'}]}catch(e){think.remove();add('s','오류: '+esc(e.message));busy=false;return}
+    let content=q;try{if(files.length&&window.__cloudUpload)await window.__cloudUpload(files);if(files.length)content=[...await A.filesToBlocks(files),{type:'text',text:q+'\n(첨부 파일명: '+files.map(f=>f.name).join(', ')+' — 데이터의 file 필드(탑승권이면 boardingFile)에는 이 파일명을 그대로 적을 것)'}]}catch(e){think.remove();add('s','오류: '+esc(e.message));busy=false;return}
     const sent=files;files=[];renderFiles();msgs2.push({role:'user',content});
     const body={model,max_tokens:8000,system:sys(id),messages:msgs2,tools:[TOOL]};if(useWeb)body.tools.unshift({type:'web_search_20260209',name:'web_search'});
     const U={in:0,out:0,search:0};let text='',changed=0,summaries=[];
