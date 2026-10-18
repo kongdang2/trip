@@ -2110,7 +2110,7 @@ async function run(){
     let content=brief(f);if(FILES.length){log(`자료 ${FILES.length}개 읽는 중…`);content=[...await filesToBlocks(FILES),{type:'text',text:brief(f)+'\n\n[업로드한 자료 파일명]\n'+FILES.map(x=>x.name).join('\n')+'\n위 자료의 예약·일정 내용을 최우선으로 반영하세요.'}]}
     const msgs=[{role:'user',content}];
     const body={model,max_tokens:16000,system:RESEARCH_SYS,output_config:{effort:'high'},messages:msgs};
-    if(useWeb)body.tools=[{type:'web_search_20260209',name:'web_search',max_uses:10}];
+    if(useWeb)body.tools=[{type:'web_search_20260209',name:'web_search'}];
     let res=await call(body,key,ctrl.signal),n=0;addUsage(U,res);showCost();
     while(res.stop_reason==='pause_turn'&&n++<5){log('조사 계속…');msgs.push({role:'assistant',content:res.content});res=await call({...body,messages:msgs},key,ctrl.signal);addUsage(U,res);showCost()}
     if(res.stop_reason==='refusal')throw new Error('모델이 요청을 거절했습니다: '+(res.stop_details&&res.stop_details.explanation||''));
@@ -2300,7 +2300,7 @@ function box(el){
    <div class="keyRow row small" style="display:none;margin:6px 0"><input type="password" class="askKey" placeholder="Anthropic API 키 (sk-ant-…) — 이 브라우저에만 저장" style="flex:1;min-width:200px"><select class="askModel"></select><button class="btn askKeySave">저장</button></div>
    <div class="chips">${a[3].map(c=>`<span class="chip" data-chip="${esc(c)}">${esc(c)}</span>`).join('')}</div>
    <div class="msgs" style="display:none"></div>
-   <div class="row" style="margin-top:6px;align-items:flex-end"><textarea rows="1" placeholder="질문하거나 지시하세요. 예: ${esc(a[3][0])}"></textarea><label class="btn" title="확인서·일정표 PDF/이미지 첨부" style="padding:7px 9px">📎<input type="file" class="askFiles" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv" style="display:none"></label><button class="btn pri askSend">보내기</button><label class="small muted" style="white-space:nowrap"><input type="checkbox" class="askWeb" checked> 웹 검색</label></div>
+   <div class="row" style="margin-top:6px;align-items:flex-end"><textarea rows="1" placeholder="질문하거나 지시하세요. 예: ${esc(a[3][0])}"></textarea><label class="btn" title="확인서·일정표 PDF/이미지 첨부" style="padding:7px 9px">📎<input type="file" class="askFiles" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv" style="display:none"></label><button class="btn pri askSend">보내기</button><label class="small muted" style="white-space:nowrap"><input type="checkbox" class="askWeb" checked> 웹 검색</label><select class="askPick small" title="이 창에서 쓸 AI 모델" style="padding:3px 4px;max-width:150px"></select></div>
    <div class="chips askFileList"></div>
    <div class="askStat small muted"></div>
   </div>`;
@@ -2309,7 +2309,9 @@ function box(el){
   el.querySelector('.askToggle').onclick=()=>{const o=body.style.display==='none';body.style.display=o?'':'none';el.querySelector('.askToggle').textContent=o?'▾':'▸';store.set('trip-ask-open',o)};
   const keyRow=el.querySelector('.keyRow');const showKey=()=>{keyRow.style.display='';el.querySelector('.askModel').innerHTML=api().MODELS.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('');el.querySelector('.askModel').value=store.get('trip-api-model','claude-opus-5-5')};
   if(!window.__CLOUD&&!store.get('trip-api-key',''))showKey();
-  el.querySelector('.askKeySave').onclick=()=>{const k=el.querySelector('.askKey').value.trim();if(!k)return;store.set('trip-api-key',k);store.set('trip-api-model',el.querySelector('.askModel').value);keyRow.style.display='none';stat.textContent='키 저장됨'};
+  {const pk=el.querySelector('.askPick');pk.innerHTML=[['claude-opus-5-5','Opus 5.5 (정확)'],['claude-sonnet-5-5','Sonnet 5.5 (절반 값)']].map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('');pk.value=store.get('trip-api-model','claude-opus-5-5');
+   pk.onchange=()=>{store.set('trip-api-model',pk.value);document.querySelectorAll('.askPick').forEach(x=>x.value=pk.value)}}
+  el.querySelector('.askKeySave').onclick=()=>{const k=el.querySelector('.askKey').value.trim();if(!k)return;store.set('trip-api-key',k);store.set('trip-api-model',el.querySelector('.askModel').value);document.querySelectorAll('.askPick').forEach(x=>x.value=el.querySelector('.askModel').value);keyRow.style.display='none';stat.textContent='키 저장됨'};
   el.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ta.value=c.dataset.chip;ta.focus();send()});
   ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,160)+'px'});
   ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send()}});
@@ -2327,7 +2329,7 @@ function box(el){
     const msgs2=hist[id].slice(-10).map(m=>({role:m.role,content:m.text}));
     let content=q;try{if(files.length&&window.__cloudUpload)await window.__cloudUpload(files);if(files.length)content=[...await A.filesToBlocks(files),{type:'text',text:q+'\n(첨부 파일명: '+files.map(f=>f.name).join(', ')+' — 데이터의 file 필드에는 이 파일명을 그대로 적을 것)'}]}catch(e){think.remove();add('s','오류: '+esc(e.message));busy=false;return}
     const sent=files;files=[];renderFiles();msgs2.push({role:'user',content});
-    const body={model,max_tokens:8000,system:sys(id),messages:msgs2,tools:[TOOL]};if(useWeb)body.tools.unshift({type:'web_search_20260209',name:'web_search',max_uses:8});
+    const body={model,max_tokens:8000,system:sys(id),messages:msgs2,tools:[TOOL]};if(useWeb)body.tools.unshift({type:'web_search_20260209',name:'web_search'});
     const U={in:0,out:0,search:0};let text='',changed=0,summaries=[];
     try{
       let res=await A.call(body,key),n=0;
