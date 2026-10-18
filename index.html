@@ -1600,10 +1600,10 @@ const APPS=(()=>{const ali={pkg:'com.eg.android.AlipayGphone',ios:'333206289'};r
   didiAli:{s:'alipays://platformapi/startapp?appId=20000778',...ali},
   aliPay:{s:'alipays://platformapi/startapp?appId=20000056',...ali},
   aliScan:{s:'alipayqr://platformapi/startapp?saId=10000007',...ali},
-  wxPay:{s:'weixin://',pkg:'com.tencent.mm',ios:'414478124',launch:1}}})();
+  wxPay:{s:'weixin://dl/scan',i:'weixin://',pkg:'com.tencent.mm',ios:'414478124',nofb:1}}})();
 function openApp(id){const a=APPS[id];if(!a)return;const ua=navigator.userAgent;
   const play=a.web||'https://play.google.com/store/apps/details?id='+a.pkg,store='https://apps.apple.com/app/id'+a.ios;
-  if(/Android/i.test(ua)&&a.launch){location.href=`intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${a.pkg};S.browser_fallback_url=${encodeURIComponent(play)};end`;return}
+  if(/Android/i.test(ua)&&a.nofb){const m=/^([a-z0-9]+):\/\/(.*)$/i.exec(a.s);location.href=`intent://${m[2]}#Intent;scheme=${m[1]};package=${a.pkg};end`;return}
   if(/Android/i.test(ua)){const m=/^([a-z0-9]+):\/\/(.*)$/i.exec(a.s);location.href=`intent://${m[2]}#Intent;scheme=${m[1]};package=${a.pkg};S.browser_fallback_url=${encodeURIComponent(play)};end`;return}
   if(/iPhone|iPad|iPod/i.test(ua)){const t0=Date.now();location.href=a.i||a.s;setTimeout(()=>{if(!document.hidden&&Date.now()-t0<4000)location.href=store},1800);return}
   if(a.web){window.open(a.web,'_blank','noopener');return}alert('휴대폰에서 누르면 설치된 앱이 열립니다.')}
@@ -1866,8 +1866,8 @@ document.addEventListener('click',e=>{const t=e.target;let b;
 function payApps(){const el=document.getElementById('payApps');if(!el)return;const tr=DATA.transport||{};
   if(tr.mapApp!=='amap'){el.innerHTML='';return}
   el.innerHTML=`<div class="card" style="margin-bottom:14px"><div class="row" style="align-items:center;gap:8px;flex-wrap:wrap"><b style="margin-right:4px">💳 결제코드</b>
-   <button class="btn pri" type="button" data-app="aliPay">알리페이 결제코드</button><button class="btn" type="button" data-app="wxPay">위챗페이</button><button class="btn" type="button" data-app="aliScan">📷 알리페이 스캔</button></div>
-   <div class="small muted" style="margin-top:6px">위챗은 결제코드로 바로 가는 링크가 없어 앱만 열립니다. 열리면 오른쪽 위 ⊕ → <b>收付款</b>(결제코드)를 누르세요. 알리페이도 첫 화면만 열리면 <b>付款码</b>를 누르면 됩니다.</div></div>`}
+   <button class="btn pri" type="button" data-app="aliPay">알리페이 결제코드</button><button class="btn" type="button" data-app="wxPay">위챗 열기</button><button class="btn" type="button" data-app="aliScan">📷 알리페이 스캔</button></div>
+   <div class="small muted" style="margin-top:6px">위챗은 결제코드로 바로 가는 링크가 없습니다. 버튼이 안 되면 폰 홈 화면에서 <b>위챗 아이콘을 길게 눌러 收付款</b>(결제코드)을 고르세요. 그 항목을 홈 화면으로 끌어 두면 한 번에 열립니다. 앱 안에서는 오른쪽 위 ⊕ → 收付款입니다. 알리페이도 첫 화면만 열리면 <b>付款码</b>를 누르면 됩니다.</div></div>`}
 function moveCards(){
   const tr=DATA.transport||{};const appName=tr.mapApp==='amap'?'가오더':'지도 앱';
   $('#moveIntro').innerHTML=airportCard()+placesCard(tr)+quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
