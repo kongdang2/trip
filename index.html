@@ -1612,65 +1612,98 @@ document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(
 // 공항별 기본 안내(웹 자료 기준, 현장 표지·앱 안내가 우선). 키: 공항코드+터미널번호:arr|dep|xfer. 데이터의 airportGuides가 있으면 그쪽이 우선.
 const AP_GUIDE={
  'SHA1:arr':{title:'상하이 훙차오 T1 도착 → 택시 타는 곳',steps:[
-  '내리면 <b>入境 / Arrivals</b> 표지 → 검역 → 입국심사(<b>外国人</b> 줄). 지문 등록 기계가 있으면 먼저 찍고 줄 서기',
-  '<b>行李提取</b>(수하물 찾기) → 세관 <b>无申报</b>(녹색 통로)로 나오면 1층 도착홀',
-  '<b>出租车 Taxi</b> 표지를 따라 <b>1층 1번 문(1号门) 밖</b> 택시 승강장(승차 칸 8개). 직원이 안내하는 공식 줄에서만 타기',
-  '디디는 짐을 찾은 뒤 호출. 앱이 정해주는 <b>网约车上车点</b>(T1은 주차장 쪽 전용 승차장)으로 가고, 앱 지도 위치를 우선',
+  '내리면 <b>入境 / 国际到达</b> 표지를 따라 도착 통로로 이동해 <b>1층 联检区</b>(검역·입국심사)로 내려감. 입국심사는 <b>外国人</b> 줄, 지문 등록 기계가 있으면 먼저 찍기',
+  '바로 옆 <b>国际、港澳台行李提取</b>(국제선 수하물 찾기)에서 짐 찾기 → 세관 <b>无申报</b>(녹색 통로)로 나가면 1층 <b>到达迎客大厅</b>(도착홀)',
+  '세관을 나오면 바로 앞이 <b>1号门</b>. 문 밖이 <b>出租车</b> 택시 승강장(승차 칸 8개). 직원이 안내하는 공식 줄에서만 타기',
+  '지하철은 도착홀 반대쪽 끝 <b>3号门</b>으로 나가 연결통로를 약 5분 걸으면 10호선 虹桥1号航站楼站. 공항버스·디디는 1号门 옆 에스컬레이터로 <b>B1 → P1 주차장</b>',
   '<span class="warn">도착홀에서 "打车吗?" 하며 다가오는 호객 기사는 따라가지 말기(무허가·바가지)</span>',
   '출발 전 미터기 사용 확인: <span class="say">请打表 <button class="btn" type="button" data-copy="请打表">복사</button></span> 고속도로 통행료는 따로 낼 수 있음'],
-  src:'상하이공항그룹·澎湃新闻 교통 안내(2024~2026)',
-  flows:[{steps:[['2F','입국심사','入境 · 外国人'],['1F','수하물 찾기','行李提取'],['1F','세관 녹색 통로','海关 · 无申报'],['1F','도착홀','到达大厅'],['1F','1번 문 밖 택시 승강장','出租车 · 1号门',1]]}],
-  curb:{hall:'T1 도착홀 (1층)',door:'1号门',pos:.15,lanes:['보도','택시 승차 칸 (8칸)','일반 차로'],hit:1},
+  src:'상하이공항 공식 T1 1층 도착 안내도(2023)·澎湃新闻 교통 안내(2024)',
+  maps:[['T1 1층 도착 공식 안내도','https://www.shanghaiairport.com/uploadfiles/2023/10/20231016170402550.jpg'],['훙차오 공식 안내도 모음','https://www.shanghaiairport.com/hongqiao/jcznt/index.html']],
+  flows:[{steps:[['2F','도착 통로','国际到达通道'],['1F','검역·입국심사','联检区 · 外国人'],['1F','수하물 찾기','国际行李提取'],['1F','세관 녹색 통로','海关 · 无申报'],['1F','1号门 밖 택시 승강장','出租车 · 8칸',1]]}],
+  top:{title:'훙차오 T1 · 1층 도착 (위에서 본 배치)',h:66,
+   zones:[[0,0,100,46,'','','bld'],[44,1,40,10,'검역·입국심사','联检区','check'],[52,13,44,9,'국제선 짐 찾기','国际行李提取','bag'],[62,24,22,8,'세관','海关 · 无申报','check'],[8,13,24,13,'국내선 짐','国内 (해당 없음)','dim'],[6,33,86,12,'도착홀','到达迎客大厅','hall'],[0,49,100,9,'건물 앞 도로','','road'],[60,49,36,9,'택시 승강장 8칸','出租车 · 1号门 밖','goal']],
+   doors:[[80,46,'1',1],[46,46,'2'],[14,46,'3']],
+   path:[[80,0],[80,46],[90,50.5]],
+   alt:[[[78,43.5],[14,43.5],[14,47],[8,60]]],
+   marks:[[42,6,'🛬 2층 도착 통로에서 내려옴','end'],[77,38,'⇣ B1 → P1 버스·디디','end'],[90,29,'ⓘ','middle'],[12,64,'🚇 3号门 → 연결통로 약 5분 → 지하철 10호선','start']]},
   plan:{floors:[['2F','도착 통로'],['1F','도착층'],['도로','건물 앞'],['B1','지하']],
-   nodes:{a:[0,0,'비행기 하기','到达'],b:[0,.5,'검역·입국심사','检疫 · 边检'],c:[1,1,'수하물 찾기','行李提取'],d:[1,.5,'세관 녹색 통로','海关 · 无申报'],e:[1,0,'도착홀','到达大厅'],f:[2,0,'1号门 밖 택시','出租车 · 8칸',1],m:[2,.62,'3号门 → 연결통로','地铁10号线 T1站'],r:[3,.32,'P1 주차장','网约车 · 공항버스']},
-   path:['a','b','c','d','e','f'],alt:[['e','m','지하철'],['e','r','디디·버스']]},
+   nodes:{a:[0,0,'비행기 하기','国际到达通道'],b:[1,0,'검역·입국심사','联检区'],c:[1,.5,'짐 찾기 → 세관','行李 · 海关'],e:[1,1,'도착홀','到达迎客大厅'],f:[2,1,'1号门 밖 택시','出租车 · 8칸',1],m:[2,.4,'3号门 → 연결통로','地铁10号线'],r:[3,.75,'P1 주차장','버스 · 디디']},
+   path:['a','b','c','e','f'],alt:[['e','m','지하철'],['e','r','디디·버스']]},
   photo:'虹桥机场T1 出租车上客点',poi:'虹桥国际机场T1航站楼出租车上客点'},
  'SHA2:dep':{title:'상하이 훙차오 T2 출발 (국내선)',steps:[
   '기사에게 터미널을 정확히: <span class="say">虹桥机场2号航站楼，东航国内出发 <button class="btn" type="button" data-copy="虹桥机场2号航站楼，东航国内出发">복사</button></span> 도착(T1)과 출발(T2)이 다른 터미널',
-  '<b>3층 出发层</b>에 하차. 하차 문은 A~D 체크인 구역이면 3~6번 문, E·G는 7~8번, F·H는 8·10번',
-  '들어가서 전광판(<b>值机</b>)에서 편명으로 동방항공 카운터 구역(A~H) 확인 → 체크인·짐 부치기',
+  '<b>3층 出发层</b>에 하차. 출발 홀은 안쪽 끝에 보안검색대가 있고 그 앞에 A~D 카운터, 홀 가운데에 E·F, 기차역 쪽 끝에 G·H',
+  '가까운 문: A~D는 3·5번(북쪽) 또는 4·6번(남쪽), E는 7번, G는 9번, F는 8번, H는 10번 문',
+  '들어가서 전광판(<b>值机</b>)에서 편명으로 동방항공 카운터 구역 확인 → 체크인·짐 부치기 → 안쪽 끝 <b>安检</b>(보안검색) → M2층 국내선 대기 구역',
   '보안검색: 보조배터리는 부치지 말고 기내로(100Wh 이하, 3C 표시 있는 것), 노트북·태블릿은 꺼내기, 생수는 반입 불가(빈 텀블러는 가능)',
   '수하물 마감·게이트 마감 시각은 항공 탭 기준. 연휴·저녁 시간대는 보안검색 줄이 길 수 있음'],
-  src:'澎湃新闻 虹桥机场登机攻略(2024)',
-  flows:[{steps:[['3F','출발층 하차','出发层 · 3~10号门'],['3F','체크인·짐 부치기','值机 A~H区'],['3F','보안검색','安检'],['3F','탑승 게이트','登机口',1]]}],
-  curb:{hall:'T2 출발층 (3층)',door:'3~6号门',pos:.35,lanes:['보도·하차 지점','출발층 차로'],hit:0,car:'🚕 하차'},
-  plan:{floors:[['게이트','보안 후'],['3F','출발층'],['도로','고가도로']],
-   nodes:{a:[2,0,'택시 하차','3~10号门'],b:[1,0,'출발 홀','出发大厅'],c:[1,.5,'동방항공 체크인','值机 A~H区'],d:[1,1,'보안검색','安检'],e:[0,1,'탑승 게이트','登机口',1]},
+  src:'상하이공항 공식 T2 3층 출발 안내도(2023)·澎湃新闻 虹桥机场登机攻略(2024)',
+  maps:[['T2 3층 출발 공식 안내도','https://www.shanghaiairport.com/uploadfiles/2023/12/20231225083756766.jpg'],['훙차오 공식 안내도 모음','https://www.shanghaiairport.com/hongqiao/jcznt/index.html']],
+  flows:[{steps:[['3F','출발층 하차','出发层 · 3~10号门'],['3F','체크인·짐 부치기','值机 A~H'],['3F','보안검색','安检区'],['M2','국내선 대기·게이트','国内候机区',1]]}],
+  top:{title:'훙차오 T2 · 3층 출발 홀 (위에서 본 배치)',h:96,
+   zones:[[8,15,84,74,'','','bld'],[8,8,84,7,'보안검색','安检区','sec'],[12,17,16,6,'A','','desk','c'],[32,17,16,6,'B','','desk','c'],[52,17,16,6,'C','','desk','c'],[72,17,16,6,'D','','desk','c'],[14,40,18,8,'E','','desk','c'],[68,40,18,8,'F','','desk','c'],[14,66,18,8,'G','','desk','c'],[68,66,18,8,'H','','desk','c'],[0,15,6,74,'','','road'],[94,15,6,74,'','','road']],
+   doors:[[8,21,'3'],[8,29,'5'],[8,44,'7'],[8,70,'9'],[92,21,'4'],[92,29,'6'],[92,44,'8'],[92,74,'10']],
+   path:[[3,27],[8,27],[30,28],[30,3]],
+   marks:[[33,4,'⬆ M2 국내선 대기 구역','start'],[50,55,'출발 홀 · 国内值机区','middle'],[56,30,'ⓘ','middle'],[50,63,'ⓘ','middle'],[50,94,'⬇ 훙차오 기차역 방향','middle'],[3,12,'🚕','middle'],[97,12,'🚕','middle']]},
+  plan:{floors:[['M2','국내선 대기'],['3F','출발층'],['도로','고가도로']],
+   nodes:{a:[2,0,'택시 하차','3~10号门'],b:[1,0,'출발 홀','出发大厅'],c:[1,.5,'체크인 A~H','值机 · 전광판 확인'],d:[1,1,'보안검색','安检区'],e:[0,1,'탑승 게이트','国内候机区',1]},
    path:['a','b','c','d','e']},
   photo:'虹桥机场T2 出发层 值机',poi:'虹桥国际机场T2航站楼'},
  'KWE3:arr':{title:'구이양 룽둥바오 T3 도착 → 택시 타는 곳',steps:[
   '<b>到达 / 行李提取</b> 표지 → 1층에서 짐 찾기',
-  '출구로 나와 <b>出租车</b> 표지 → <b>1층 21번 문(21号门) 맞은편, 가장 바깥쪽 택시 차로</b>가 승차 지점. 앞쪽 차선 두 줄이 택시 대기 구역',
-  '저녁 도착이면 택시 줄이 길 수 있음(대기 구역 약 400m). 줄 맨 앞에 배차 부스가 있으니 순서대로',
-  '디디는 짐 찾은 뒤 호출하고 앱이 정해주는 <b>网约车上车点</b>으로 이동. T3 개항(2021) 때는 디디 승차장이 <b>T2 5번 문 맞은편</b>이었으니, 앱이 그쪽을 가리키면 T2 방향 표지를 따라가기',
-  '<span class="warn">구이양은 T2·T3가 나뉘어 있음. 도착 터미널은 기내 방송·전광판으로 한 번 더 확인</span>'],
-  src:'贵阳机场 T3 개항 교통 안내(2021)',
-  flows:[{steps:[['2F','도착 통로','到达'],['1F','수하물 찾기','行李提取'],['1F','도착 출구','到达出口'],['1F','21번 문 맞은편 택시 승차','出租车 · 21号门对面',1]]}],
-  curb:{hall:'T3 도착층 (1층)',door:'21号门',pos:.7,lanes:['보도','택시 차로','가장 바깥 택시 차로 · 승차'],hit:2},
-  plan:{floors:[['2F','도착 통로'],['1F','도착층'],['도로','건물 앞']],
-   nodes:{a:[0,0,'비행기 하기','到达'],b:[1,.45,'수하물 찾기','行李提取'],c:[1,1,'도착 출구','到达出口'],d:[2,1,'21号门 맞은편','出租车 · 바깥 차로',1],r:[2,.4,'디디 승차장','앱 지정 · T2 5号门?']},
+  '출구는 <b>21号门</b>. 밖으로 나가 차로를 건너 <b>가장 바깥쪽 택시 차로(21号门 맞은편)</b>가 승차 지점. 건물 쪽 차로는 버스 정류장(1~12번)',
+  '저녁 도착이면 택시 줄이 길 수 있음. 줄 맨 앞 배차 부스에서 순서대로',
+  '디디는 짐 찾은 뒤 호출. 공항 공식 안내 기준 승차장은 <b>1호 주차장 지하 2층 D구역(1号停车场负二层D区)</b>. 앱이 다른 곳을 가리키면 앱 위치 우선',
+  '<span class="warn">구이양은 T2·T3가 나뉘어 있음(21번 문에서 왼쪽으로 4~5분 걸으면 T2). 도착 터미널은 기내 방송·전광판으로 한 번 더 확인</span>'],
+  src:'구이양공항 공식 교통 안내·T3 개항 교통 안내(2021~2022)',
+  maps:[['구이양공항 공식 교통 안내','https://www.gzgyairport.com/contents/47/24.html']],
+  flows:[{steps:[['2F','도착 통로','到达'],['1F','수하물 찾기','行李提取'],['1F','21번 문으로 나가기','到达出口 · 21号门'],['도로','가장 바깥 택시 차로','出租车 · 21号门对面',1]]}],
+  top:{title:'구이양 T3 · 1층 도착 (위에서 본 배치)',h:80,
+   zones:[[10,0,90,40,'','','bld'],[0,0,8,40,'T2','','dim','c'],[30,3,50,12,'수하물 찾기','行李提取','bag'],[14,21,82,15,'도착 홀','到达大厅','hall'],[10,44,90,7,'건물 쪽 차로 · 버스 정류장','公交 1~12站','road',58],[10,52,90,5,'정차 금지 차로','','dim',58],[10,58,90,8,'','','road'],[10,58,40,8,'택시 승차','出租车 · 21号门对面','goal',28],[40,70,58,8,'1호 주차장 지하 2층 D구역','网约车 (디디)','check',56]],
+   doors:[[22,40,'21',1],[44,40,'19'],[66,40,'17'],[88,40,'15']],
+   path:[[64,0],[64,15],[22,30],[22,40],[23,57.5]],
+   alt:[[[25,41.5],[52,47.5],[52,69.5]]],
+   marks:[[66,7,'🛬 위층에서 내려옴','start'],[9,46,'⬅ T2','end'],[58,63,'택시 대기 줄 →','start']]},
+  plan:{floors:[['2F','도착 통로'],['1F','도착층'],['도로','건물 앞'],['B2','1호 주차장']],
+   nodes:{a:[0,0,'비행기 하기','到达'],b:[1,.45,'수하물 찾기','行李提取'],c:[1,1,'21번 문 출구','21号门'],d:[2,1,'바깥 택시 차로','出租车 · 21号门对面',1],r:[3,.45,'디디 승차장','1号停车场 B2 D区']},
    path:['a','b','c','d'],alt:[['c','r','디디']]},
   photo:'贵阳机场T3 出租车上客点',poi:'贵阳龙洞堡国际机场T3航站楼出租车上客点'},
  'KWE3:dep':{title:'구이양 룽둥바오 T3 출발',steps:[
-  '기사에게: <span class="say">龙洞堡机场T3航站楼，东航出发 <button class="btn" type="button" data-copy="龙洞堡机场T3航站楼，东航出发">복사</button></span> (T2·T3 분리, 전날 동방항공 앱에서 터미널 확인)',
-  '출발층에 내려 전광판에서 동방항공 카운터 확인 → 체크인',
+  '기사에게: <span class="say">龙洞堡机场T3航站楼，东航出发 <button class="btn" type="button" data-copy="龙洞堡机场T3航站楼，东航出发">복사</button></span> 동방항공은 2024년 11월부터 T3 사용(T2·T3 분리, 전날 앱에서 한 번 더 확인)',
+  '<b>3층 출발층</b>에 내려 <b>18번 또는 22번 문</b>으로 들어가기(16·24번은 나가는 문)',
+  '동방항공 카운터는 <b>F 섬(F岛)</b>. 전광판(<b>值机</b>)에서 편명으로 한 번 더 확인 → 체크인',
   '다음 항공편으로 갈아탄다면 체크인할 때 꼭 물어보기: <span class="say">行李直挂到仁川吗？ <button class="btn" type="button" data-copy="行李直挂到仁川吗？">복사</button></span> (짐이 인천까지 바로 가나요?) → 탑승권을 두 장 다 받았는지 확인',
-  '보안검색 규칙은 국내선과 같음(보조배터리 기내, 생수 불가)'],
-  src:'동방항공 공항 안내',
-  flows:[{steps:[['출발층','하차','出发'],['출발층','동방항공 체크인','东航值机 · 行李直挂?'],['출발층','보안검색','安检'],['','탑승 게이트','登机口',1]]}],
-  plan:{floors:[['게이트','보안 후'],['출발층','值机'],['도로','건물 앞']],
-   nodes:{a:[2,0,'택시 하차','出发'],b:[1,0,'출발 홀','出发大厅'],c:[1,.5,'동방항공 체크인','짐 인천까지?'],d:[1,1,'보안검색','安检'],e:[0,1,'탑승 게이트','登机口',1]},
+  '보안검색은 한 층 위 <b>4층</b>. 규칙은 국내선과 같음(보조배터리 기내, 생수 불가)'],
+  src:'贵阳机场 T3 개항 안내(2021)·동방항공 T3 이전 공지(2024.11)',
+  maps:[['동방항공 T3 이전 소식','https://www.traveldaily.cn/expressPage/184871'],['구이양공항 공식 교통 안내','https://www.gzgyairport.com/contents/47/24.html']],
+  flows:[{steps:[['3F','하차 · 18·22번 문','出发 · 18/22号门'],['3F','F 섬 동방항공 체크인','东航值机 F岛 · 行李直挂?'],['4F','보안검색','安检'],['4F','탑승 게이트','登机口',1]]}],
+  top:{title:'구이양 T3 · 3층 출발 홀 (위에서 본 배치)',h:72,
+   zones:[[6,0,88,46,'','','bld'],[6,0,88,9,'보안검색 (한 층 위 4층)','安检 4F','sec'],[8,13,84,31,'출발 홀','出发大厅','hall'],[40,22,20,14,'F 섬','东航 值机','goal','c'],[14,24,18,10,'','','desk'],[68,24,18,10,'','','desk'],[0,50,100,9,'3층 출발 도로 · 하차','出发车道','road']],
+   doors:[[18,46,'16'],[34,46,'18',1],[50,46,'20'],[66,46,'22',1],[82,46,'24']],
+   path:[[36,56],[34,46],[38,40],[43,35]],
+   alt:[[[60,24],[74,14],[74,5]]],
+   marks:[[50,66,'초록 문 18·22 = 들어가는 문 · 16·24 = 나가는 문','middle'],[76,10,'⇡ 에스컬레이터','start'],[77,40,'F 섬 위치는 개념도','middle']]},
+  plan:{floors:[['4F','보안·게이트'],['3F','출발층'],['도로','3층 앞']],
+   nodes:{a:[2,0,'택시 하차','18·22号门'],b:[1,0,'출발 홀','出发大厅'],c:[1,.5,'F 섬 동방항공','值机 · 짐 인천?'],d:[0,.5,'보안검색','安检'],e:[0,1,'탑승 게이트','登机口',1]},
    path:['a','b','c','d','e']},
   photo:'贵阳龙洞堡机场T3 出发 值机',poi:'贵阳龙洞堡国际机场T3航站楼'},
  'XIY5:xfer':{title:'시안 셴양 T5 환승 (국내선 도착 → 국제선 출발)',steps:[
   '<b>A. 짐이 최종 목적지까지 연결된 경우</b>(탑승권 2장 받음): 내려서 <b>中转 / 国内转国际 Transfer</b> 표지 → <b>2층 中转03区</b> 동방항공 국내→국제 환승 카운터 → 출국 검사(검역·세관·보안·출국심사) → 국제선 게이트',
-  '<b>B. 짐이 연결되지 않은 경우</b>: <b>到达</b> 표지 → 1층에서 짐 찾기 → <b>3층 국제선 출발층</b>(533·534번 문 쪽) → D·E·G·H 체크인 구역에서 다시 체크인 → 출국 검사 → 게이트',
+  '<b>B. 짐이 연결되지 않은 경우</b>: <b>到达</b> 표지 → 1층에서 짐 찾기 → <b>3층 국제선 출발층</b>으로 올라가 <b>533·534번 문</b> 쪽 D·E·G·H 체크인 구역에서 다시 체크인 → 출국 검사 → 게이트. 532번 문 쪽 B·C는 국내선이라 가지 않기',
+  '533번 문 옆에 안내 카운터가 있음. 터미널을 잘못 왔으면 533번 문 밖 셔틀',
   '국제선 체크인은 출발 3시간 전에 열고 40분 전에 닫힘. 환승 수속도 출발 40분 전에 마감',
   '<span class="warn">공항 안내 페이지에 "환승 서비스 일시 중단" 문구가 남아 있어, 연결 여부를 모르면 B 동선으로 움직이는 게 안전</span>',
   '헷갈리면 직원에게: <span class="say">我要转国际航班 <button class="btn" type="button" data-copy="我要转国际航班">복사</button></span> (국제선으로 갈아타요)'],
-  src:'시안공항·동방항공 T5 안내(2025)',
+  src:'시안공항 공식 환승 안내·T5 이용 안내 기사(2025)',
+  maps:[['시안공항 공식 환승 안내','http://www.xxia.com/cjzn/zz.htm']],
   flows:[{name:'A. 짐이 인천까지 연결된 경우',steps:[['2F','환승 표지 따라','中转 · 国内转国际'],['2F','동방항공 환승 카운터','中转03区 东航'],['','출국 검사','海关 · 安检 · 边检'],['','국제선 게이트','国际登机口',1]]},
-         {name:'B. 짐이 연결 안 된 경우',steps:[['1F','수하물 찾기','行李提取'],['3F','국제선 출발층','国际出发 · 533·534号门'],['3F','다시 체크인','值机 D·E·G·H区'],['','출국 검사 → 게이트','边检 · 登机口',1]]}],
+         {name:'B. 짐이 연결 안 된 경우',steps:[['1F','수하물 찾기','行李提取'],['3F','국제선 출발층','国际出发 · 533·534号门'],['3F','다시 체크인','值机 D·E·G·H'],['','출국 검사 → 게이트','边检 · 登机口',1]]}],
+  top:{title:'시안 T5 · 3층 국제선 출발 홀 (B 동선)',h:72,
+   zones:[[4,0,92,48,'','','bld'],[42,0,54,9,'출국 검사','海关·安检·边检','sec'],[6,12,32,26,'국내선 구역','B · C','dim'],[10,20,10,14,'B','','desk','c'],[24,20,10,14,'C','','desk','c'],[42,18,11,16,'D','','goal','c'],[55,18,11,16,'E','','goal','c'],[70,18,11,16,'G','','goal','c'],[83,18,11,16,'H','','goal','c'],[0,52,100,8,'3층 출발 도로','','road']],
+   doors:[[22,48,'532'],[62,48,'533',1],[80,48,'534',1]],
+   path:[[50,44],[62,38],[68,36],[68,6]],
+   marks:[[48,45,'⇧ 1층에서 올라옴','end'],[62,43,'ⓘ 안내','middle'],[62,66,'🚌 터미널 잘못 왔을 때 셔틀: 533번 문 밖','middle'],[40,5,'A 동선(짐 연결)은 2층 中转03区','end']]},
   plan:{floors:[['3F','국제선'],['2F','도착·환승'],['1F','수하물']],
    nodes:{a:[1,.3,'국내선 도착','到达'],b:[1,.85,'환승 카운터','中转03区 东航'],e:[2,.3,'수하물 찾기','行李提取'],f:[0,0,'다시 체크인','533·534号门 · D·E·G·H'],c:[0,.5,'출국 검사','海关·安检·边检'],d:[0,1,'게이트','登机口',1]},
    path:['a','b','c','d'],alt:[['a','e','B'],['e','f','B'],['f','c','']],legend:'실선 A: 짐 연결됨 · 점선 B: 짐 찾아 재체크인'},
@@ -1690,6 +1723,19 @@ function apCurb(c){const W=340,lh=24,top=58,n=c.lanes.length,H=top+n*lh+8,dx=Mat
   const lanes=c.lanes.map((t,i)=>{const y=top+i*lh,hit=i===c.hit;return `<rect x="0" y="${y}" width="${W}" height="${lh-2}" rx="3" style="fill:${hit?'rgba(15,157,88,.16)':i?'rgba(120,130,150,.12)':'rgba(120,130,150,.06)'};stroke:${hit?'#0f9d58':'none'}"/><text x="${dx>W/2?8:W-8}" y="${y+15}" text-anchor="${dx>W/2?'start':'end'}" style="font-size:11px;fill:currentColor;opacity:${hit?1:.7};font-weight:${hit?700:400}">${esc(t)}</text>${hit?`<text x="${dx>W/2?dx-32:dx+14}" y="${y+16}" style="font-size:14px">${esc(c.car||'🚕')}</text>`:''}`}).join('');
   const hy=top+(c.hit||0)*lh+11;
   return `<div class="apCurb"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(c.hall+' '+c.door)} 약도"><rect x="0" y="4" width="${W}" height="44" rx="6" style="fill:rgba(37,99,235,.08);stroke:rgba(37,99,235,.45)"/><text x="10" y="22" style="font-size:12px;font-weight:700;fill:currentColor">${esc(c.hall)}</text><text x="10" y="39" style="font-size:10px;fill:currentColor;opacity:.6">건물 안</text>${doors.map(x=>`<rect x="${x-9}" y="44" width="18" height="6" style="fill:rgba(37,99,235,.35)"/>`).join('')}<rect x="${dx-16}" y="42" width="32" height="10" rx="2" style="fill:#0f9d58"/><text x="${dx}" y="38" text-anchor="middle" style="font-size:11px;font-weight:700;fill:#0f9d58">${esc(c.door)}</text><line x1="${dx}" y1="52" x2="${dx}" y2="${hy}" style="stroke:#0f9d58;stroke-width:2.5;stroke-dasharray:4 3"/><circle cx="${dx}" cy="${hy}" r="4" style="fill:#0f9d58"/>${lanes}</svg><div class="apCap">개념도: 문 번호와 차로 순서만 표시, 실제 배치·축척과 다름</div></div>`}
+function apTop(t){const k=3.6,W=360,H=Math.round(t.h*k),q=v=>Math.round(v*k*10)/10,e2=x=>esc(x||'');
+  const C={hall:['rgba(249,115,22,.15)','rgba(234,88,12,.55)'],check:['rgba(168,85,247,.15)','rgba(147,51,234,.55)'],bag:['rgba(20,184,166,.17)','rgba(13,148,136,.6)'],sec:['rgba(225,29,72,.15)','rgba(225,29,72,.6)'],desk:['rgba(148,163,184,.25)','rgba(100,116,139,.6)'],road:['rgba(120,130,150,.13)','rgba(120,130,150,.35)'],dim:['rgba(120,130,150,.06)','rgba(120,130,150,.3)'],goal:['rgba(15,157,88,.17)','#0f9d58'],bld:['rgba(37,99,235,.035)','rgba(37,99,235,.35)']};
+  let g='';const ln=(pts,c,dash,m)=>`<polyline points="${pts.map(p=>q(p[0])+','+q(p[1])).join(' ')}" style="fill:none;stroke:${c};stroke-width:${dash?2:3.2};${dash?'stroke-dasharray:5 4;':''}stroke-linejoin:round;stroke-linecap:round" marker-end="url(#apTa${m})"/>`;
+  (t.zones||[]).forEach(z=>{const c=C[z[6]]||C.hall,ctr=z[7]==='c',x=ctr?q(z[0]+z[2]/2):q(typeof z[7]==='number'?z[7]:z[0]+1.6),an=ctr?'middle':'start';
+    g+=`<rect x="${q(z[0])}" y="${q(z[1])}" width="${q(z[2])}" height="${q(z[3])}" rx="4" style="fill:${c[0]};stroke:${c[1]};stroke-width:${z[6]==='goal'?2:1}"/>`;
+    const y0=ctr?q(z[1]+z[3]/2)+(z[5]?-1:4):q(z[1])+14;
+    if(z[4])g+=`<text x="${x}" y="${y0}" text-anchor="${an}" style="font-size:${ctr&&z[4].length<3?13:10.5}px;font-weight:700;fill:currentColor">${e2(z[4])}</text>`;
+    if(z[5])g+=`<text x="${x}" y="${y0+11}" text-anchor="${an}" style="font-size:8.5px;fill:currentColor;opacity:.65">${e2(z[5])}</text>`});
+  (t.alt||[]).forEach(a=>{g+=ln(a,'#d97706',1,2)});
+  if(t.path)g+=ln(t.path,'#2563eb',0,1)+`<circle cx="${q(t.path[0][0])}" cy="${q(t.path[0][1])}" r="4.5" style="fill:#2563eb"/>`;
+  (t.doors||[]).forEach(d=>{const w=Math.max(14,String(d[2]).length*7+5);g+=`<rect x="${q(d[0])-w/2}" y="${q(d[1])-6.5}" width="${w}" height="13" rx="3" style="fill:${d[3]?'#0f9d58':'#475569'}"/><text x="${q(d[0])}" y="${q(d[1])+3.5}" text-anchor="middle" style="font-size:9.5px;font-weight:700;fill:#fff">${e2(d[2])}</text>`});
+  (t.marks||[]).forEach(m=>{g+=`<text x="${q(m[0])}" y="${q(m[1])+3}" text-anchor="${m[3]||'start'}" style="font-size:9.5px;font-weight:600;fill:currentColor;opacity:.85">${e2(m[2])}</text>`});
+  return `<div class="apPlan apTop"><div class="fh" style="font-size:12px;font-weight:700;margin:2px 0 4px">${e2(t.title)}</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${e2(t.title)}"><defs><marker id="apTa1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:#2563eb"/></marker><marker id="apTa2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:#d97706"/></marker></defs>${g}</svg><div class="apCap">공식 안내도를 보고 다시 그린 배치도(축척 아님) · 파란 화살표: 추천 동선 · 주황 점선: 다른 길 · 초록: 목적지·이용할 문</div></div>`}
 function apPlan(pl){const W=360,L=48,NW=90,U=W-L-NW-2,BH=66,NH=38,F=pl.floors,H=F.length*BH+4,N=pl.nodes;
   const pos=k=>{const n=N[k];return {x:L+NW/2+U*n[1],y:n[0]*BH+BH/2,f:n[0]}};
   const seg=(a,b)=>{const p=pos(a),q=pos(b);if(p.f===q.f)return `M${p.x} ${p.y}L${q.x} ${q.y}`;const gy=q.f>p.f?(p.f+1)*BH:p.f*BH;return `M${p.x} ${p.y}L${p.x} ${gy}L${q.x} ${gy}L${q.x} ${q.y}`};
@@ -1710,8 +1756,8 @@ const apgLbl={arr:'도착 후 길 안내',dep:'출발 안내',xfer:'환승 안�
 function apgLinks(l){if(l.type!=='fly')return '';return apgItems().filter(x=>x.leg===l).map(x=>`<a href="#apg-${esc(x.key)}" class="apgLk" data-apg="${esc(x.key)}">🧭 ${apgLbl[x.kind]}</a>`).join('')}
 function airportCard(){const it=apgItems();if(!it.length)return '';
   const body=it.map(x=>{const g=apgGet(x.key),has=(g.steps||[]).length;
-    const q=`${x.p.name}(${x.p.local||x.p.code}) ${apgLbl[x.kind]}을 웹에서 확인해 airportGuides["${x.key}"]에 {title, steps:[...], src, flows:[{name,steps:[[층,한국어,중국어 표지,마지막이면1]]}], photo:사진 검색어, poi:가오더 검색어}로 넣어줘. 내린 곳에서 택시·디디 타는 곳(층·문 번호), 중국어 표지판, 주의할 점 위주로.`;
-    return `<details id="apg-${esc(x.key)}"><summary>${esc(g.title||x.p.name+' '+apgLbl[x.kind])} <span class="muted small">${md(x.leg.t)}</span></summary>${(g.plan||g.flows||g.curb)?`<div class="apVis">${g.plan?apPlan(g.plan):(g.flows||[]).map(apFlow).join('')}${g.curb?apCurb(g.curb):''}</div>`:''}${has?`<ol>${g.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="small muted" style="margin-top:4px">출처: ${esc(g.src||'웹 자료')} · 현장 표지와 앱 안내가 다르면 현장이 우선</div>`:'<div class="small muted" style="margin:6px 0">아직 안내가 없습니다.</div>'}${window.__CLOUD_DATA?`<div class="apShots" data-shots="${esc(x.key)}"></div>`:''}<div class="row" style="margin-top:6px">${window.__CLOUD_DATA?`<label class="btn" style="cursor:pointer">📸 내 캡처 붙이기<input type="file" accept="image/*" multiple hidden data-apshot="${esc(x.key)}"></label>`:''}${g.photo?`<a class="btn" href="https://image.baidu.com/search/index?tn=baiduimage&word=${encodeURIComponent(g.photo)}" target="_blank" rel="noopener">📷 실제 사진 보기</a>`:''}${g.poi?`<button class="btn" type="button" data-apsearch="${esc(g.poi)}" data-apll="${x.p.lat!=null?x.p.lat+','+x.p.lng:''}">🗺 가오더 실내지도</button>`:''}<button class="btn" type="button" data-ask="journey" data-q="${esc(q)}">${has?'🔎 AI로 최신 정보 다시 확인':'🔎 AI로 공항 안내 만들기'}</button></div></details>`}).join('');
+    const q=`${x.p.name}(${x.p.local||x.p.code}) ${apgLbl[x.kind]}을 웹에서 확인해 airportGuides["${x.key}"]에 {title, steps:[...], src, flows:[{name,steps:[[층,한국어,중국어 표지,마지막이면1]]}], photo:사진 검색어, poi:가오더 검색어, maps:[["공식 안내도 이름","공항 공식 URL"]]}로 넣어줘. 내린 곳에서 택시·디디 타는 곳(층·문 번호), 중국어 표지판, 주의할 점 위주로.`;
+    return `<details id="apg-${esc(x.key)}"><summary>${esc(g.title||x.p.name+' '+apgLbl[x.kind])} <span class="muted small">${md(x.leg.t)}</span></summary>${(g.top||g.plan||g.flows||g.curb)?`<div class="apVis">${g.top?apTop(g.top):''}${g.plan?apPlan(g.plan):(g.flows||[]).map(apFlow).join('')}${g.curb&&!g.top?apCurb(g.curb):''}</div>`:''}${has?`<ol>${g.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="small muted" style="margin-top:4px">출처: ${esc(g.src||'웹 자료')} · 현장 표지와 앱 안내가 다르면 현장이 우선</div>`:'<div class="small muted" style="margin:6px 0">아직 안내가 없습니다.</div>'}${window.__CLOUD_DATA?`<div class="apShots" data-shots="${esc(x.key)}"></div>`:''}<div class="row" style="margin-top:6px">${window.__CLOUD_DATA?`<label class="btn" style="cursor:pointer">📸 내 캡처 붙이기<input type="file" accept="image/*" multiple hidden data-apshot="${esc(x.key)}"></label>`:''}${(g.maps||[]).map(m=>`<a class="btn" href="${esc(m[1])}" target="_blank" rel="noopener">📄 ${esc(m[0])}</a>`).join('')}${g.photo?`<a class="btn" href="https://image.baidu.com/search/index?tn=baiduimage&word=${encodeURIComponent(g.photo)}" target="_blank" rel="noopener">📷 실제 사진 보기</a>`:''}${g.poi?`<button class="btn" type="button" data-apsearch="${esc(g.poi)}" data-apll="${x.p.lat!=null?x.p.lat+','+x.p.lng:''}">🗺 가오더 실내지도</button>`:''}<button class="btn" type="button" data-ask="journey" data-q="${esc(q)}">${has?'🔎 AI로 최신 정보 다시 확인':'🔎 AI로 공항 안내 만들기'}</button></div></details>`}).join('');
   return `<div class="card" id="apGuide" style="margin-bottom:14px"><h3 style="margin:0 0 4px">🧭 공항 안 길 안내 <span class="muted small">내린 뒤 택시 타는 곳·환승 동선</span></h3>${body}</div>`}
 const shotPre=k=>'공항캡처_'+k.replace(':','_')+'_';
 async function apShots(box){if(!box||!window.__cloudFileNames)return;const k=box.dataset.shots,ns=window.__cloudFileNames().filter(n=>n.startsWith(shotPre(k))).sort();
