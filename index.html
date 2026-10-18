@@ -1867,7 +1867,7 @@ function payApps(){const el=document.getElementById('payApps');if(!el)return;con
   if(tr.mapApp!=='amap'){el.innerHTML='';return}
   el.innerHTML=`<div class="card" style="margin-bottom:14px"><div class="row" style="align-items:center;gap:8px;flex-wrap:wrap"><b style="margin-right:4px">💳 결제코드</b>
    <button class="btn pri" type="button" data-app="aliPay">알리페이 결제코드</button><button class="btn" type="button" data-app="wxPay">위챗 열기</button><button class="btn" type="button" data-app="aliScan">📷 알리페이 스캔</button></div>
-   <div class="small muted" style="margin-top:6px">위챗은 결제코드로 바로 가는 링크가 없습니다. 버튼이 안 되면 폰 홈 화면에서 <b>위챗 아이콘을 길게 눌러 收付款</b>(결제코드)을 고르세요. 그 항목을 홈 화면으로 끌어 두면 한 번에 열립니다. 앱 안에서는 오른쪽 위 ⊕ → 收付款입니다. 알리페이도 첫 화면만 열리면 <b>付款码</b>를 누르면 됩니다.</div></div>`}
+   <div class="small muted" style="margin-top:6px">위챗 열기를 누르면 "page is not available" 안내가 먼저 뜰 수 있습니다. 왼쪽 위 X로 닫으면 위챗 화면으로 들어갑니다. 결제코드로 바로 가는 링크는 없어서, 더 빠르게 열려면 폰 홈 화면에서 <b>위챗 아이콘을 길게 눌러 收付款</b>(결제코드)을 고르세요. 그 항목을 홈 화면으로 끌어 두면 한 번에 열립니다. 앱 안에서는 오른쪽 위 ⊕ → 收付款입니다. 알리페이도 첫 화면만 열리면 <b>付款码</b>를 누르면 됩니다.</div></div>`}
 function moveCards(){
   const tr=DATA.transport||{};const appName=tr.mapApp==='amap'?'가오더':'지도 앱';
   $('#moveIntro').innerHTML=airportCard()+placesCard(tr)+quickApps(tr)+(tr.intro?`<div class="alert info"><span class="ic">i</span><div>${tr.intro}</div></div>`:'');
