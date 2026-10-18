@@ -1183,11 +1183,25 @@ window.__cloudFileUrl=f=>{if(!f)return '';if(/^(https?:|data:|blob:)/i.test(f))r
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#cf="]');if(!a)return;e.preventDefault();openCloudFile(decodeURIComponent(a.getAttribute('href').slice(4)))});
 
 /* ---- Claude 중계 (키는 서버에만) ---- */
+/* 오래 걸리는 요청(웹 검색 등)은 휴대폰이 기다리다 연결이 끊기는 일이 있어(2026-10-18 hong 폰 "Failed to fetch"),
+   함수에 ?async=1로 작업만 맡기고 결과는 trip_jobs 행을 몇 초마다 읽어 받는다. 중간에 연결이 끊겨도 다시 읽으면 된다. */
+const nap=ms=>new Promise(r=>setTimeout(r,ms));
 window.__cloudCall=async(body,signal)=>{const {data:{session}}=await sb.auth.getSession();if(!session)throw Object.assign(new Error('로그인이 만료됐습니다 — 다시 로그인하세요'),{status:401});
-  const r=await fetch(`${CFG.supabaseUrl.replace(/\/$/,'')}/functions/v1/${FN}`,{method:'POST',signal,headers:{'content-type':'application/json','authorization':'Bearer '+session.access_token,'apikey':CFG.supabaseKey},body:JSON.stringify(body)});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok){let m=(j.error&&(j.error.message||j.error))||('HTTP '+r.status);if(r.status===404&&!j.error)m='Claude 중계 함수(trip-claude)가 아직 배포되지 않았습니다 — Supabase Edge Functions에 배포하세요';const e=new Error(String(m));e.status=r.status;throw e}
-  return j};
+  const post=async()=>{const r=await fetch(`${CFG.supabaseUrl.replace(/\/$/,'')}/functions/v1/${FN}?async=1`,{method:'POST',signal,headers:{'content-type':'application/json','authorization':'Bearer '+session.access_token,'apikey':CFG.supabaseKey},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){let m=(j.error&&(j.error.message||j.error))||('HTTP '+r.status);if(r.status===404&&!j.error)m='Claude 중계 함수(trip-claude)가 아직 배포되지 않았습니다 — Supabase Edge Functions에 배포하세요';const e=new Error(String(m));e.status=r.status;throw e}
+    return j};
+  let j;try{j=await post()}catch(e){if(e.status||(signal&&signal.aborted))throw e;await nap(1500);j=await post()}
+  if(!j.job)return j;/* 예전 함수: 바로 응답 */
+  const t0=Date.now();
+  for(let k=0;;k++){if(signal&&signal.aborted)throw new DOMException('중단됨','AbortError');
+    await nap(k<10?2000:3000);
+    let row=null;try{const {data,error}=await sb.from('trip_jobs').select('status,http,result').eq('id',j.job).maybeSingle();if(!error)row=data}catch(_){/* 잠깐 끊김 — 다음에 다시 */}
+    if(row&&row.status==='done'){sb.from('trip_jobs').delete().eq('id',j.job).then(()=>{},()=>{});const res=row.result||{};
+      if(!row.http||row.http>=300){const m=(res.error&&(res.error.message||res.error))||('HTTP '+row.http);const e=new Error(String(m));e.status=row.http;throw e}
+      return res}
+    if(Date.now()-t0>200000&&!document.hidden)throw new Error('응답이 200초 넘게 오지 않습니다 — 서버 시간 제한(150초)에 걸린 것 같습니다. 웹 검색을 끄거나 질문을 나눠서 다시 시도하세요')}
+};
 
 /* ---- 시작 ---- */
 (async()=>{try{const {data:{session}}=await sb.auth.getSession();if(session&&session.user){await afterLogin(session.user)}else showLogin('');}catch(e){showLogin(explain(e),'bad')}
@@ -2313,7 +2327,7 @@ function box(el){
     const msgs2=hist[id].slice(-10).map(m=>({role:m.role,content:m.text}));
     let content=q;try{if(files.length&&window.__cloudUpload)await window.__cloudUpload(files);if(files.length)content=[...await A.filesToBlocks(files),{type:'text',text:q+'\n(첨부 파일명: '+files.map(f=>f.name).join(', ')+' — 데이터의 file 필드에는 이 파일명을 그대로 적을 것)'}]}catch(e){think.remove();add('s','오류: '+esc(e.message));busy=false;return}
     const sent=files;files=[];renderFiles();msgs2.push({role:'user',content});
-    const body={model,max_tokens:8000,system:sys(id),messages:msgs2,tools:[TOOL]};if(useWeb)body.tools.unshift({type:'web_search_20260209',name:'web_search',max_uses:5});
+    const body={model,max_tokens:8000,system:sys(id),messages:msgs2,tools:[TOOL]};if(useWeb)body.tools.unshift({type:'web_search_20260209',name:'web_search',max_uses:8});
     const U={in:0,out:0,search:0};let text='',changed=0,summaries=[];
     try{
       let res=await A.call(body,key),n=0;
