@@ -1216,7 +1216,7 @@ window.__cloudSigned=async name=>{const path=cur&&cur.files&&cur.files[name];if(
   return (await fileCached(name))||''};
 window.__cloudRemoveFile=async name=>{if(!cur)return;const map=await filesNow();const path=map[name];if(!path)return;delete map[name];await sb.storage.from(BUCKET).remove([path]).catch(()=>{});const error=await filesPut(map);if(error)throw new Error(explain(error))};
 window.__cloudFileUrl=f=>{if(!f)return '';if(/^(https?:|data:|blob:)/i.test(f))return f;return '#cf='+encodeURIComponent(f)};
-document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#cf="]');if(!a)return;e.preventDefault();openCloudFile(decodeURIComponent(a.getAttribute('href').slice(4)))});
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#cf="],a[data-cf]');if(!a)return;e.preventDefault();openCloudFile(a.dataset.cf||decodeURIComponent(a.getAttribute('href').slice(4)))});
 
 /* ---- Claude 중계 (키는 서버에만) ---- */
 /* 오래 걸리는 요청(웹 검색 등)은 휴대폰이 기다리다 연결이 끊기는 일이 있어(2026-10-18 hong 폰 "Failed to fetch"),
