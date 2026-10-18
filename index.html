@@ -669,6 +669,15 @@ svg.leaflet-image-layer.leaflet-interactive path {
 		}
 	}
 
+.bk{margin-top:12px;padding:10px 12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:var(--bg)}
+.bkH{font-weight:700;margin-bottom:4px}
+#frontCard{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+#frontCard .fcIn{background:#fff;color:#111;border-radius:16px;max-width:560px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+#frontCard .fcHotel{font-size:18px;font-weight:700;color:#555;margin-bottom:10px}
+#frontCard .fcHi{font-size:26px;font-weight:800;line-height:1.35;margin:6px 0 14px}
+#frontCard .fcKv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:20px;margin:0}
+#frontCard .fcKv dt{color:#666}#frontCard .fcKv dd{margin:0;font-weight:700;word-break:break-all}
+#frontCard .fcKo{margin-top:14px;font-size:14px;color:#666}
 </style>
 <style>
 :root{
@@ -1521,6 +1530,48 @@ function hotelSearch(h){const area=h.searchArea||h.city||(P[h.place]||{}).city||
   out.push(['구글 호텔',`https://www.google.com/travel/search?q=${encodeURIComponent(h.name||area)}&hl=ko`]);return out}
 
 /* ---------- flights ---------- */
+/* ---------- 예약 조회·체크인 ---------- */
+// 온라인 체크인 규정: open=출발 몇 시간 전부터, close=출발 몇 분 전 마감(국제 intl·국내 dom). 항공편의 checkin(URL)·checkinOpen(시간)이 있으면 그걸 씀
+const CHECKIN={
+  OZ:{url:'https://flyasiana.com/C/KR/KO/contents/online-check-in',open:48,close:{intl:60},need:'예약번호(또는 항공권 번호) + 출발일',alt:'아시아나 앱에서도 됩니다.'},
+  MU:{url:'https://www.ceair.com/ko/',open:48,close:{intl:60,dom:45},need:'영문 이름 + 항공권 번호(또는 예약번호)',alt:'동방항공 앱, 알리페이·위챗의 东方航空 미니프로그램에서도 됩니다.'}};
+const tzOf=iso=>{const m=/([+-]\d\d):?(\d\d)$/.exec(iso||'');return m?(+m[1])*60+(m[1][0]==='-'?-1:1)*(+m[2]):null};
+function atLocal(ms,iso){const o=tzOf(iso);const d=new Date(ms+(o==null?0:o*60000));return `${d.getUTCMonth()+1}/${d.getUTCDate()}(${WD[d.getUTCDay()]}) ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`}
+function leftTxt(ms){const m=Math.round(ms/60000);if(m<60)return m+'분';const h=Math.floor(m/60);return h<48?h+'시간'+(m%60?' '+(m%60)+'분':''):Math.floor(h/24)+'일 '+(h%24)+'시간'}
+function ciWindow(f){const r=CHECKIN[(f.flightNo||f.id||'').slice(0,2).toUpperCase()]||{};const dep=Date.parse(f.dep);if(isNaN(dep))return null;
+  const openH=f.checkinOpen||r.open;const closeM=r.close?(f.international?r.close.intl:r.close.dom):null;if(!openH)return null;
+  const o=dep-openH*3600000,c=closeM!=null?dep-closeM*60000:null,now=Date.now();
+  const st=c!=null&&now>=c?['마감','bad']:now>=o?['지금 체크인 가능','ok']:[leftTxt(o-now)+' 뒤 열림','warn'];
+  return {txt:`${atLocal(o,f.dep)}부터${c!=null?' · 출발 '+closeM+'분 전 마감':''}`,st}}
+const bkCopy=(v,label)=>v?`<button class="btn" type="button" data-copy="${esc(v)}" title="복사">📋 ${esc(label)}</button>`:'';
+function bkAir(f,i){const r=CHECKIN[(f.flightNo||f.id||'').slice(0,2).toUpperCase()]||{};const url=f.checkin||r.url||f.manage;const pax=(f.passengers||[])[0]||'';const [sur,given]=pax.split('/');
+  const tk=(f.ticket||'').replace(/\D/g,'');const w=ciWindow(f);const prev=F[i-1];const joint=prev&&f.ticket&&prev.ticket===f.ticket;
+  return `<div class="bk"><div class="bkH">🎫 예약 조회·체크인${w?` <span class="pill ${w.st[1]}">${esc(w.st[0])}</span>`:''}</div>
+   ${w?`<div class="small">온라인 체크인 ${esc(w.txt)} <span class="muted">(${esc(code(f.from))} 현지 시각)</span></div>`:''}
+   ${joint?`<div class="small muted">${esc(prev.flightNo||prev.id)}과 같은 항공권이라 앞 구간 체크인 때 함께 처리되는 경우가 많습니다. 화면에서 이 편이 같이 나오는지 확인하세요.</div>`:''}
+   <div class="row" style="margin-top:8px">${bkCopy(f.pnr,'예약번호 '+(f.pnr||''))}${bkCopy(tk,'항공권 번호')}${bkCopy(sur,'성 '+(sur||''))}${bkCopy(given,'이름 '+(given||''))}</div>
+   ${url&&!joint?`<div class="row" style="margin-top:8px"><a class="btn pri" href="${url}" target="_blank" rel="noopener" data-copyopen="${esc(f.pnr||tk)}">✈️ 체크인 페이지 열기 (예약번호 자동 복사)</a></div>`:''}
+   <div class="small muted" style="margin-top:6px">${r.need?'조회에 필요한 것: '+esc(r.need)+'. ':''}항공사 사이트는 다른 사이트에서 입력칸을 채워 줄 수 없어서, 열린 화면에 붙여 넣기만 하면 됩니다. ${esc(r.alt||'')}${f.baggage&&f.baggage.checked?' 위탁 수하물이 있으면 미리 체크인해도 카운터(짐 부치는 곳)에 들러야 하고, 보통 그때 종이 탑승권도 받습니다.':''}</div></div>`}
+function bkNums(s){return [...new Set(String(s||'').match(/[A-Z0-9][A-Z0-9-]{5,}/gi)||[])]}
+function bkHotel(h){const nums=bkNums(h.booking);
+  return `<div class="bk"><div class="bkH">🛎 체크인</div>
+   <div class="row" style="margin-top:6px">${nums.map(n=>bkCopy(n,n)).join('')}<button class="btn pri" type="button" data-front="${esc(h.id)}">🛎 프런트에 보여줄 화면</button></div>
+   <div class="small muted" style="margin-top:6px">호텔은 온라인 체크인이 없고 프런트에서 여권 원본을 내면 됩니다. "프런트에 보여줄 화면"을 열어 직원에게 보여 주세요.</div></div>`}
+function bkRail(t){const nums=bkNums(t.booking);if(!nums.length&&!t.manage)return '';
+  return `<div class="bk"><div class="bkH">🎫 승차권 조회</div><div class="row" style="margin-top:6px">${nums.map(n=>bkCopy(n,'예매번호 '+n)).join('')}${t.manage?`<a class="btn pri" href="${t.manage}" target="_blank" rel="noopener" data-copyopen="${esc(nums[0]||'')}">🎫 예매 조회 열기 (예매번호 자동 복사)</a>`:''}</div>
+   <div class="small muted" style="margin-top:6px">코레일·SRT·버스는 앱에서 로그인하면 승차권이 바로 보입니다. 비회원 예매면 예매번호로 조회하세요.</div></div>`}
+function frontCard(id){const h=H.find(x=>x.id===id);if(!h)return;const p=P[h.place]||{};const cn=(DATA.transport||{}).mapApp==='amap';const nums=bkNums(h.booking);
+  const L=cn?{hi:'您好，我有预订，想办理入住。',no:'预订号',gu:'入住人',dt:'入住 / 退房',rm:'房型',n:'晚'}:{hi:'Hello, I have a reservation and would like to check in.',no:'Booking no.',gu:'Guest',dt:'Check-in / out',rm:'Room',n:'night(s)'};
+  const d=s=>s?s.slice(5).replace('-','/'):'';const ln=h.localName||((p.local||'').includes(' · ')?p.local.split(' · ')[0]:'');
+  const en=t=>String(t||'').replace(/외\s*(\d+)/g,'+$1').replace(/성인\s*(\d+)/g,'$1 adults');
+  const el=document.createElement('div');el.id='frontCard';el.innerHTML=`<div class="fcIn"><button class="btn" type="button" id="fcX" style="float:right">닫기 ✕</button>
+   <div class="fcHotel">${esc(ln||h.name)}${ln?`<div class="small" style="font-weight:400">${esc(h.name)}</div>`:''}</div><div class="fcHi">${L.hi}</div>
+   <dl class="fcKv"><dt>${L.no}</dt><dd>${nums.length?nums.map(esc).join('<br>'):esc(h.booking||'')}</dd><dt>${L.gu}</dt><dd>${esc(en(h.guests))}</dd>
+   <dt>${L.dt}</dt><dd>${d(h.in)} – ${d(h.out)}${h.nights?` (${h.nights} ${L.n})`:''}</dd>${h.room?`<dt>${L.rm}</dt><dd>${esc(en(h.room))}</dd>`:''}</dl>
+   <div class="fcKo">안녕하세요, 예약했고 체크인하려고 합니다. · 여권 원본을 함께 내세요.</div></div>`;
+  document.body.appendChild(el);el.addEventListener('click',e=>{if(e.target===el||e.target.id==='fcX')el.remove()})}
+document.addEventListener('click',e=>{const a=e.target.closest('a[data-copyopen]');if(a&&a.dataset.copyopen){try{navigator.clipboard.writeText(a.dataset.copyopen)}catch(_){}}
+  const b=e.target.closest('[data-front]');if(b)frontCard(b.dataset.front)});
 function airCards(){
   $('#airCards').innerHTML=F.length?F.map(f=>{
     const cand=isCand(f.status);
@@ -1533,9 +1584,9 @@ function airCards(){
     ${f.baggage?`<dt>수하물</dt><dd>위탁 ${esc(f.baggage.checked)} · 기내 ${esc(f.baggage.cabin)}</dd>`:''}
     ${f.checkinClose?`<dt>체크인 마감</dt><dd>${esc(f.checkinClose)}</dd>`:''}
     ${f.fare||f.fareNote?`<dt>${cand?'예상 요금':'요금'}</dt><dd>${f.fare?esc(f.currency)+' '+fmt(f.fare):''}${f.fareNote?' <span class="muted">('+esc(f.fareNote)+')</span>':''}${f.paidBy?' · '+esc(f.paidBy):''}</dd>`:''}
-    ${f.why?`<dt>추천 이유</dt><dd>${esc(f.why)}</dd>`:''}${f.phone?`<dt>고객센터</dt><dd>${esc(f.phone)}</dd>`:''}</dl>
+    ${f.why?`<dt>추천 이유</dt><dd>${esc(f.why)}</dd>`:''}${f.phone?`<dt>고객센터</dt><dd>${esc(f.phone)}</dd>`:''}</dl>${cand?'':bkAir(f,F.indexOf(f))}
     <div class="row" style="margin-top:12px">${cand?flightSearch(f).map(([n,u],i)=>`<a class="btn ${i?'':'pri'}" href="${u}" target="_blank" rel="noopener">${n}에서 예약</a>`).join(''):''}
-    ${f.manage?`<a class="btn ${cand?'':'pri'}" href="${f.manage}" target="_blank" rel="noopener">${cand?'항공사 사이트':'예약 조회·온라인 체크인'}</a>`:''}${f.file?`<a class="btn" href="${encFile(f.file)}">e티켓 PDF</a>`:''}</div></div>`}).join(''):`<div class="card"><h3>항공편 없음</h3><p class="small muted" style="margin:0 0 10px">국내 출장은 KTX·버스로 가는 경우가 많지만, 항공을 쓰려면 아래에서 검색하거나 위 프롬프트 창에 "행사 일정에 맞는 항공편 후보 찾아서 flights에 넣어 줘"라고 하세요.</p><div class="row">${flightSearch({from:T.homeAirport||'GMP',to:T.destAirport||'',dep:T.start||''}).map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${n}</a>`).join('')}</div></div>`;
+    ${f.manage?`<a class="btn ${cand?'':'pri'}" href="${f.manage}" target="_blank" rel="noopener">${cand?'항공사 사이트':'항공사 예약 관리'}</a>`:''}${f.file?`<a class="btn" href="${encFile(f.file)}">e티켓 PDF</a>`:''}</div></div>`}).join(''):`<div class="card"><h3>항공편 없음</h3><p class="small muted" style="margin:0 0 10px">국내 출장은 KTX·버스로 가는 경우가 많지만, 항공을 쓰려면 아래에서 검색하거나 위 프롬프트 창에 "행사 일정에 맞는 항공편 후보 찾아서 flights에 넣어 줘"라고 하세요.</p><div class="row">${flightSearch({from:T.homeAirport||'GMP',to:T.destAirport||'',dep:T.start||''}).map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${n}</a>`).join('')}</div></div>`;
 }
 
 /* ---------- hotels ---------- */
@@ -1551,7 +1602,7 @@ function hotelCards(){
     <div class="muted small">${md(h.in)} ${esc(h.inTime||'')} → ${md(h.out)} ${esc(h.outTime||'')} · ${h.nights||''}박</div>
     <dl class="kv" style="margin-top:10px">${h.room?`<dt>객실</dt><dd>${esc(h.room)}</dd>`:''}${h.guests?`<dt>투숙객</dt><dd>${esc(h.guests)}</dd>`:''}${h.breakfast?`<dt>조식</dt><dd>${esc(h.breakfast)}</dd>`:''}
     ${h.booking?`<dt>예약번호</dt><dd><b>${esc(h.booking)}</b></dd>`:''}${h.amount?`<dt>${cand?'예상 금액':'금액'}</dt><dd>${esc(h.currency)} ${fmt(h.amount)}</dd>`:''}${h.cancelText?`<dt>취소 규정</dt><dd>${esc(h.cancelText)}</dd>`:''}
-    ${h.why?`<dt>추천 이유</dt><dd>${esc(h.why)}</dd>`:''}${h.address?`<dt>주소</dt><dd>${esc(h.address)}</dd>`:''}${h.phone?`<dt>전화</dt><dd><a href="tel:${h.phone.replace(/[^+\d]/g,'')}">${esc(h.phone)}</a>${h.email?` · <a href="mailto:${h.email}">${esc(h.email)}</a>`:''}</dd>`:''}${h.support?`<dt>예약처</dt><dd>${esc(h.support)}</dd>`:''}</dl>
+    ${h.why?`<dt>추천 이유</dt><dd>${esc(h.why)}</dd>`:''}${h.address?`<dt>주소</dt><dd>${esc(h.address)}</dd>`:''}${h.phone?`<dt>전화</dt><dd><a href="tel:${h.phone.replace(/[^+\d]/g,'')}">${esc(h.phone)}</a>${h.email?` · <a href="mailto:${h.email}">${esc(h.email)}</a>`:''}</dd>`:''}${h.support?`<dt>예약처</dt><dd>${esc(h.support)}</dd>`:''}</dl>${cand?'':bkHotel(h)}
     <div class="row" style="margin-top:12px">${cand?hotelSearch(h).map(([n,u],i)=>`<a class="btn ${i?'':'pri'}" href="${u}" target="_blank" rel="noopener">${n}에서 예약</a>`).join(''):''}
     ${h.manage?`<a class="btn ${cand?'':'pri'}" href="${h.manage}" target="_blank" rel="noopener">${cand?'호텔 사이트':'예약 관리'}</a>`:''}${h.file?`<a class="btn" href="${encFile(h.file)}">바우처·확인서 PDF</a>`:''}
     ${p.local||p.name?`<a class="btn" href="${mapLink(h.place)}" target="_blank" rel="noopener">지도</a>`:''}</div></div>`}).join('');
@@ -1568,7 +1619,7 @@ function railCards(){
     return `<div class="card" ${cand?'style="border-style:dashed"':''}><div class="row" style="justify-content:space-between"><h2>${esc(t.kind||'')} ${esc(t.no||t.id)}</h2>${stPill(t.status)}</div>
     <div class="muted small">${md(t.dep)}${t.seat?' · '+esc(t.seat):''}</div>
     <div class="fl"><div><div class="ap" style="font-size:20px">${esc(name(t.from))}</div><div class="tm">${hm(t.dep)}</div></div><div class="line" style="--ic:'🚄'"></div><div style="text-align:right"><div class="ap" style="font-size:20px">${esc(name(t.to))}</div><div class="tm">${hm(t.arr)}</div></div></div>
-    <dl class="kv">${t.booking?`<dt>예매번호</dt><dd><b>${esc(t.booking)}</b></dd>`:''}${t.passengers?`<dt>탑승자</dt><dd>${esc(t.passengers.join(', '))}</dd>`:''}${t.fare?`<dt>${cand?'예상 요금':'요금'}</dt><dd>${esc(t.currency||'KRW')} ${fmt(t.fare)}${t.paidBy?' · '+esc(t.paidBy):''}</dd>`:''}${t.why?`<dt>추천 이유</dt><dd>${esc(t.why)}</dd>`:''}${t.note?`<dt>메모</dt><dd>${esc(t.note)}</dd>`:''}</dl>
+    <dl class="kv">${t.booking?`<dt>예매번호</dt><dd><b>${esc(t.booking)}</b></dd>`:''}${t.passengers?`<dt>탑승자</dt><dd>${esc(t.passengers.join(', '))}</dd>`:''}${t.fare?`<dt>${cand?'예상 요금':'요금'}</dt><dd>${esc(t.currency||'KRW')} ${fmt(t.fare)}${t.paidBy?' · '+esc(t.paidBy):''}</dd>`:''}${t.why?`<dt>추천 이유</dt><dd>${esc(t.why)}</dd>`:''}${t.note?`<dt>메모</dt><dd>${esc(t.note)}</dd>`:''}</dl>${cand?'':bkRail(t)}
     <div class="row" style="margin-top:12px">${cand?railSearch(t).map(([n,u],i)=>`<a class="btn ${i?'':'pri'}" href="${u}" target="_blank" rel="noopener">${n}에서 예매</a>`).join('')+`<button class="btn" data-copy="${esc(railCond(t))}" title="예매 사이트 검색창에 붙여 넣을 조건">📋 조건 복사</button><span class="small muted" style="flex-basis:100%">${esc(railCond(t))} — 예매 사이트는 날짜·구간을 링크로 못 넘겨서 조건을 복사해 붙여 넣으세요.</span>`:''}${t.manage?`<a class="btn ${cand?'':'pri'}" href="${t.manage}" target="_blank" rel="noopener">예매 조회</a>`:''}${t.file?`<a class="btn" href="${encFile(t.file)}">승차권</a>`:''}</div></div>`}).join('')
   :`<div class="card muted">등록된 KTX·SRT·고속버스 일정이 없습니다. 국내 출장이면 위 프롬프트 창에 "행사 일정에 맞는 KTX 후보 찾아서 trains에 넣어 줘"라고 하거나, 아래 사이트에서 예매하세요.</div>`;
 }
