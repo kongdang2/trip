@@ -958,6 +958,7 @@ details.alerts[open] summary{margin-bottom:8px}
   <div class="hero" id="hero-rules"></div>
   <div class="ask" data-agent="rules"></div>
   <div id="rulesAlert"></div>
+  <div id="wxWrap"></div>
   <div class="infoHead"><h3 class="sec">✈️ 탑승·수하물</h3></div>
   <div class="card" id="bagWrap"><div class="tablewrap"><table id="bagTable"></table></div></div>
   <div class="grid g2" style="margin-top:14px" id="ruleSections"></div>
@@ -1058,7 +1059,7 @@ const FN=CFG.claudeFunction||'trip-claude', BUCKET=CFG.bucket||'trip-files';
 let user=null, cur=null /* 현재 출장 행 */, savedAt=null, saveTimer=null, saving=false, dirty=false;
 const keyOf=d=>'trip:'+(((d||{}).trip||{}).id||((d||{}).trip||{}).title||'default')+':';
 /* ---- 오프라인(2026-10-18 hong 요청): 마지막으로 연 출장을 이 기기에 저장해 두고, 서버에 못 닿으면 그걸로 연다.
-   화면 파일은 sw.js가 캐시. 공항 캡처·열어 본 증빙은 Cache API('trip-files-v1')에 보관(여권 사본은 보관하지 않음). */
+   화면 파일은 sw.js가 캐시. 공항 캡처·열어 본 증빙은 Cache API('trip-files-v1')에 보관(여권 사본은 보관하지 않음). 2026-10-20: 출장을 열면 나머지 모든 파일을 뒤에서 미리 받아 둠. */
 const OFF='trip-offline';let offline=false,offAt=0;
 const isNet=e=>!e||e.name==='AbortError'||/fetch|network|timeout|Load failed|NetworkError|ERR_/i.test(String((e&&e.message)||e));
 const within=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
@@ -1066,9 +1067,20 @@ function offSave(pending){if(!cur)return;try{if(pending==null){const o=offLoad()
   localStorage.setItem(OFF,JSON.stringify({row:{...cur,data:d,expenses:store.get(K+'exp',cur.expenses||[]),fx:store.get(K+'fx',cur.fx||{})},email:user&&user.email,at:Date.now(),pending:!!pending}))}catch(e){console.warn('오프라인 저장 실패',e)}}
 function offLoad(){try{return JSON.parse(localStorage.getItem(OFF)||'null')}catch(e){return null}}
 function bootOffline(){const s=offLoad();if(!s||!s.row)return false;offline=true;offAt=s.at;user=user||{email:s.email||''};gate.style.display='none';openTrip(s.row);return true}
-const FCACHE='trip-files-v1',fKey=n=>new URL('__files/'+encodeURIComponent(n),location.href).href,cacheable=n=>!/^(여권|passport)/i.test(n);
+const FCACHE='trip-files-v1',fKey=n=>new URL('__files/'+encodeURIComponent(n),location.href).href,cacheable=n=>!/^(여권|passport)/i.test(n),KEEPMAX=25*1024*1024;let pf={n:0,m:0,run:false,done:false};
 async function fileCached(n){try{if(!window.caches)return null;const c=await caches.open(FCACHE);const r=await c.match(fKey(n));return r?URL.createObjectURL(await r.blob()):null}catch(e){return null}}
 async function fileKeep(n,url){try{if(!window.caches||!cacheable(n))return;const c=await caches.open(FCACHE);if(await c.match(fKey(n)))return;const r=await fetch(url);if(r.ok)await c.put(fKey(n),r)}catch(e){}}
+/* 출장을 열면 여권 사본을 뺀 모든 파일을 뒤에서 받아 둔다. 같은 이름으로 다시 올린 파일은 __cloudUpload가 캐시를 비워 새로 받고, 지운 파일은 캐시에서도 지운다. */
+async function filePrefetch(){if(pf.run||offline||!navigator.onLine||!cur||!window.caches)return;pf.run=true;pf.done=false;
+  try{const files=cur.files||{},names=Object.keys(files).filter(cacheable),c=await caches.open(FCACHE);
+    for(const k of await c.keys()){const m=/__files\/([^/]+)$/.exec(k.url);if(m&&!files[decodeURIComponent(m[1])])await c.delete(k)}
+    const need=[];for(const n of names)if(!(await c.match(fKey(n))))need.push(n);
+    pf.n=names.length-need.length;pf.m=names.length;barRender();
+    if(need.length){const {data,error}=await within(sb.storage.from(BUCKET).createSignedUrls(need.map(n=>files[n]),3600),15000);
+      if(!error&&data)for(const [i,n] of need.entries()){const u=data[i]&&data[i].signedUrl;if(!u||offline||!navigator.onLine)continue;
+        try{const r=await fetch(u);const len=+r.headers.get('content-length')||0;if(r.ok&&len<=KEEPMAX){await c.put(fKey(n),r);pf.n++;barRender()}}catch(e){}}}
+    pf.done=pf.n>=pf.m}catch(e){console.warn('미리 받기 실패',e)}pf.run=false;barRender()}
+const offChip=()=>!cur||!window.caches?'':pf.run?`<span style="color:#b45309" title="인터넷이 될 때 파일을 이 기기에 받아 둡니다">📥 오프라인용 파일 저장 중 ${pf.n}/${pf.m}</span>`:pf.done&&pf.m?`<span style="color:#15803d" title="${pf.m}개 파일이 이 기기에 저장돼 비행기 모드에서도 열립니다. 여권 사본은 보안상 제외입니다."><b>✅ 오프라인 준비됨</b> (파일 ${pf.m}개)</span>`:''
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(e=>console.warn('sw',e));
 window.addEventListener('online',()=>{if(cur&&dirty&&!offline)flush();barRender()});window.addEventListener('offline',()=>barRender());
 const hhmm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
@@ -1178,10 +1190,10 @@ function openTrip(r){
   if(window.__bootTrip){window.__bootTrip();window.__bootTrip=null}
   if(window.__bootAsk){window.__bootAsk();window.__bootAsk=null}
   bar.style.display='';barRender();
-  if(!offline)setTimeout(offSave,1500);
+  if(!offline){setTimeout(offSave,1500);setTimeout(filePrefetch,3000)}
 }
 function barRender(){const net=offline||!navigator.onLine;const st=saving?'저장 중…':dirty?(net?'이 기기에만 저장됨 — 연결되면 올라감':'저장 대기'):savedAt?'저장됨 '+hhmm(savedAt):'';
-  bar.innerHTML=`${net?`<span class="cgOff" style="color:#b45309;font-weight:700">📴 오프라인${offline&&offAt?' · '+esc(dmy(offAt))+' 저장본':''}</span><button class="btn" id="cgRe">🔄 다시 연결</button>`:''}<span>☁ ${esc(user?user.email:'')}</span>${cur?`<span id="cgSt">${st}</span>`:''}<button class="btn" id="cgListBtn">출장 목록</button>${cur?`<label class="btn" title="확인서·영수증 PDF를 AI 처리 없이 저장소에만 올립니다. 데이터의 file 필드와 파일명이 같으면 📎 링크가 바로 열립니다">📁 증빙 파일 올리기<input type="file" id="cgUp" multiple style="display:none"></label><button class="btn" id="cgDl">JSON 내려받기</button>${ppName()?`<button class="btn" id="cgPp" title="비공개 저장소의 여권 사본을 10분짜리 임시 링크로 엽니다. 바꾸려면 📁로 '여권'으로 시작하는 파일을 올리세요">🛂 여권 사본</button>`:`<label class="btn" title="여권 사진·PDF를 비공개 저장소에만 보관합니다(AI 처리·데이터 기록 없음)">🛂 여권 사본 올리기<input type="file" id="cgPpUp" accept="image/*,.pdf" style="display:none"></label>`}`:''}<button class="btn" id="cgOut2">로그아웃</button>`;
+  bar.innerHTML=`${net?`<span class="cgOff" style="color:#b45309;font-weight:700">📴 오프라인${offline&&offAt?' · '+esc(dmy(offAt))+' 저장본':''}</span><button class="btn" id="cgRe">🔄 다시 연결</button>`:''}<span>☁ ${esc(user?user.email:'')}</span>${offChip()}${cur?`<span id="cgSt">${st}</span>`:''}<button class="btn" id="cgListBtn">출장 목록</button>${cur?`<label class="btn" title="확인서·영수증 PDF를 AI 처리 없이 저장소에만 올립니다. 데이터의 file 필드와 파일명이 같으면 📎 링크가 바로 열립니다">📁 증빙 파일 올리기<input type="file" id="cgUp" multiple style="display:none"></label><button class="btn" id="cgDl">JSON 내려받기</button>${ppName()?`<button class="btn" id="cgPp" title="비공개 저장소의 여권 사본을 10분짜리 임시 링크로 엽니다. 바꾸려면 📁로 '여권'으로 시작하는 파일을 올리세요">🛂 여권 사본</button>`:`<label class="btn" title="여권 사진·PDF를 비공개 저장소에만 보관합니다(AI 처리·데이터 기록 없음)">🛂 여권 사본 올리기<input type="file" id="cgPpUp" accept="image/*,.pdf" style="display:none"></label>`}`:''}<button class="btn" id="cgOut2">로그아웃</button>`;
   $('#cgListBtn').onclick=()=>{if(cur){store.del('trip-cloud-current');location.hash='';location.reload()}else showList()};
   $('#cgOut2').onclick=()=>$('#cgOut').click();
   const re=$('#cgRe');if(re)re.onclick=async()=>{if(dirty&&cur){offline=false;await flush();if(dirty){offline=true;barRender();return}}location.reload()};
@@ -1224,13 +1236,13 @@ window.__cloudUpload=async files=>{if(!cur||!user)return;const map=await filesNo
   for(const [i,f] of files.entries()){if(f.size>30*1024*1024){errs.push(`${f.name}: 30MB 초과`);continue}const path=`${user.id}/${cur.id}/${Date.now()}${i}_${safeName(f.name)}`;
     const {error}=await sb.storage.from(BUCKET).upload(path,f,{upsert:true,contentType:f.type||'application/octet-stream'});
     if(error){errs.push(f.name+': '+explain(error));continue}const old=map[f.name];if(old&&old!==path)sb.storage.from(BUCKET).remove([old]).then(()=>{},()=>{});map[f.name]=path;n++}
-  if(n){const error=await filesPut(map);if(error)errs.push('목록 저장 실패: '+explain(error))}
+  if(n){const error=await filesPut(map);if(error)errs.push('목록 저장 실패: '+explain(error));try{const c=await caches.open(FCACHE);for(const f of files)await c.delete(fKey(f.name))}catch(e){}pf.run=false;setTimeout(filePrefetch,500)}
   if(errs.length)throw new Error((n?`${n}개 저장됨, 실패: `:'')+errs.join(' / '));return n};
 window.__cloudFileNames=()=>Object.keys((cur&&cur.files)||{});
 window.__cloudSigned=async name=>{const path=cur&&cur.files&&cur.files[name];if(!path)return '';
   if(!offline&&navigator.onLine){try{const {data}=await within(sb.storage.from(BUCKET).createSignedUrl(path,3600),9000);if(data&&data.signedUrl){fileKeep(name,data.signedUrl);return data.signedUrl}}catch(e){}}
   return (await fileCached(name))||''};
-window.__cloudRemoveFile=async name=>{if(!cur)return;const map=await filesNow();const path=map[name];if(!path)return;delete map[name];await sb.storage.from(BUCKET).remove([path]).catch(()=>{});const error=await filesPut(map);if(error)throw new Error(explain(error))};
+window.__cloudRemoveFile=async name=>{if(!cur)return;const map=await filesNow();const path=map[name];if(!path)return;delete map[name];await sb.storage.from(BUCKET).remove([path]).catch(()=>{});try{(await caches.open(FCACHE)).delete(fKey(name))}catch(e){}const error=await filesPut(map);if(error)throw new Error(explain(error))};
 window.__cloudFileUrl=f=>{if(!f)return '';if(/^(https?:|data:|blob:)/i.test(f))return f;return '#cf='+encodeURIComponent(f)};
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#cf="],a[data-cf]');if(!a)return;e.preventDefault();openCloudFile(a.dataset.cf||decodeURIComponent(a.getAttribute('href').slice(4)))});
 
@@ -1964,8 +1976,47 @@ function moveCards(){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-copy]');if(!b)return;const txt=b.dataset.copy;(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>{const o=b.textContent;b.textContent='복사됨';setTimeout(()=>b.textContent=o,1200)}).catch(()=>prompt('복사하세요',txt))});
 
 /* ---------- rules ---------- */
+const WX_C={0:['☀️','맑음'],1:['🌤️','대체로 맑음'],2:['⛅','구름 조금'],3:['☁️','흐림'],45:['🌫️','안개'],48:['🌫️','안개'],51:['🌦️','약한 이슬비'],53:['🌦️','이슬비'],55:['🌧️','강한 이슬비'],56:['🌧️','어는 이슬비'],57:['🌧️','어는 이슬비'],61:['🌦️','약한 비'],63:['🌧️','비'],65:['🌧️','강한 비'],66:['🌧️','어는 비'],67:['🌧️','어는 비'],71:['🌨️','약한 눈'],73:['🌨️','눈'],75:['❄️','강한 눈'],77:['🌨️','눈알갱이'],80:['🌦️','소나기'],81:['🌧️','소나기'],82:['⛈️','강한 소나기'],85:['🌨️','눈소나기'],86:['🌨️','눈소나기'],95:['⛈️','뇌우'],96:['⛈️','뇌우·우박'],99:['⛈️','뇌우·우박']};
+const wxCode=c=>WX_C[c]||['❔','-'];
+const wxDays=(a,b)=>{const o=[];for(let t=Date.parse(a+'T00:00:00Z');t<=Date.parse(b+'T00:00:00Z')&&o.length<40;t+=864e5)o.push(new Date(t).toISOString().slice(0,10));return o};
+function wxPlan(){const P=DATA.places||{},by={};
+  const add=(pid,d)=>{const p=P[pid];d=String(d||'').slice(0,10);if(!p||p.lat==null||p.lng==null||!p.city||!/^\d{4}-\d\d-\d\d$/.test(d))return;
+    const c=by[p.city]=by[p.city]||{city:p.city,pid,lat:p.lat,lng:p.lng,kind:p.kind,dates:new Set()};
+    if(c.kind==='airport'&&p.kind!=='airport'){c.pid=pid;c.lat=p.lat;c.lng=p.lng;c.kind=p.kind}c.dates.add(d)};
+  (DATA.legs||[]).forEach(l=>{add(l.from,l.t);add(l.to,l.end||l.t);add(l.at,l.t)});
+  (DATA.hotels||[]).forEach(h=>{if(h.in&&h.out)wxDays(h.in,h.out).forEach(d=>add(h.place,d))});
+  return Object.values(by).map(c=>{const ds=[...c.dates].sort();return {city:c.city,lat:c.lat,lng:c.lng,dates:ds,a:ds[0],b:ds[ds.length-1]}}).sort((x,y)=>x.a<y.a?-1:1)}
+const wxKey=()=>'trip-wx:'+(((DATA.trip||{}).id)||'default');
+async function wxFetch(c){const ymd=t=>new Date(t).toISOString().slice(0,10);const now=Date.now(),lo=ymd(now-7*864e5),hi=ymd(now+15*864e5);
+  const a=c.a<lo?lo:c.a,b=c.b>hi?hi:c.b;if(a>b)return {city:c.city,days:{},far:true};
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max&timezone=auto&start_date=${a}&end_date=${b}`;
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),9000);
+  try{const r=await fetch(u,{signal:ctl.signal});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json(),d=j.daily||{},days={};
+    (d.time||[]).forEach((t,i)=>days[t]={code:d.weather_code[i],hi:d.temperature_2m_max[i],lo:d.temperature_2m_min[i],pop:d.precipitation_probability_max[i],mm:d.precipitation_sum[i],wind:d.wind_speed_10m_max[i]});
+    return {city:c.city,days,far:c.b>hi}}finally{clearTimeout(tm)}}
+let wxBusy=false;
+async function wxRefresh(force){if(wxBusy)return;const plan=wxPlan();if(!plan.length||!navigator.onLine)return;
+  const old=store.get(wxKey(),null);if(!force&&old&&Date.now()-old.at<3*3600e3&&JSON.stringify(old.plan)===JSON.stringify(plan.map(p=>[p.city,p.a,p.b])))return;
+  wxBusy=true;wxRender();let res=[],fail=0;
+  for(const c of plan){try{res.push(await wxFetch(c))}catch(e){fail++;const o=old&&old.res&&old.res.find(x=>x.city===c.city);if(o)res.push(o)}}
+  wxBusy=false;if(res.length)store.set(wxKey(),{at:Date.now(),res,plan:plan.map(p=>[p.city,p.a,p.b]),fail});wxRender()}
+const wxDress=d=>{if(!d||d.hi==null)return '';const t=[];if(d.hi<=12)t.push('두꺼운 겉옷');else if(d.lo<=14||d.hi<=19)t.push('가벼운 재킷');else if(d.hi>=27)t.push('시원하게');if((d.pop||0)>=50||(d.mm||0)>=1)t.push('우산');return t.join('·')};
+function wxRender(){const el=document.getElementById('wxWrap');if(!el)return;const plan=wxPlan();if(!plan.length){el.innerHTML='';return}
+  const st=store.get(wxKey(),null),net=navigator.onLine,wk='일월화수목금토';
+  const num=v=>v==null?'-':Math.round(v);
+  const blocks=plan.map(c=>{const r=st&&st.res&&st.res.find(x=>x.city===c.city),span=c.a===c.b?md(c.a):md(c.a)+'~'+md(c.b);
+    const rows=c.dates.map(d=>{const w=r&&r.days&&r.days[d],dt=new Date(d+'T00:00:00Z'),ds=`${md(d)}(${wk[dt.getUTCDay()]})`;
+      if(!w)return `<tr><td>${ds}</td><td colspan="5" class="muted small">${r&&r.far?'예보는 약 2주 앞부터 나옵니다':(wxBusy?'불러오는 중…':'예보 없음')}</td></tr>`;
+      const [ic,tx]=wxCode(w.code),rain=(w.pop||0)>=50||(w.mm||0)>=1;
+      return `<tr><td style="white-space:nowrap"><b>${ds}</b></td><td style="white-space:nowrap">${ic} ${tx}</td><td style="white-space:nowrap"><b>${num(w.hi)}°</b> / ${num(w.lo)}°</td><td style="white-space:nowrap${rain?';color:var(--bad);font-weight:600':''}">☔ ${w.pop==null?'-':w.pop+'%'}${w.mm?` · ${Math.round(w.mm*10)/10}mm`:''}</td><td class="muted small" style="white-space:nowrap">💨 ${num(w.wind)}km/h</td><td class="small">${esc(wxDress(w))}</td></tr>`}).join('');
+    return `<h4 style="margin:12px 0 4px">📍 ${esc(c.city)} <span class="muted small" style="font-weight:400">${span}</span></h4><div class="tablewrap"><table><tr><th>날짜</th><th>날씨</th><th>최고 / 최저</th><th>강수</th><th>바람</th><th>복장 참고</th></tr>${rows}</table></div>`}).join('');
+  const when=st?new Date(st.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  el.innerHTML=`<div class="card" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">🌤 출장지별 날씨</h3><span class="muted small">${st?`${when} 기준${net?'':' · 오프라인 저장본'}`:(net?'':'오프라인이라 아직 받지 못했습니다')}</span><button class="btn" type="button" id="wxRe" style="margin-left:auto"${net?'':' disabled'}>🔄 ${wxBusy?'불러오는 중…':'새로 받기'}</button></div>${blocks}<p class="small muted" style="margin:8px 0 0">예보는 Open-Meteo(지점 좌표 기준, 현지 시각 하루 단위)입니다. 복장 참고는 기온·강수 기준 자동 안내입니다.${st&&st.fail?` 일부 도시는 받지 못해 이전 값을 보여 줍니다.`:''}</p></div>`;
+  const b=document.getElementById('wxRe');if(b)b.onclick=()=>wxRefresh(true)}
+window.addEventListener('online',()=>{try{wxRefresh()}catch(e){}});
 function rules(){
   try{siteCards()}catch(e){console.error(e)}
+  try{wxRender();wxRefresh()}catch(e){console.error(e)}
   const R=DATA.rules||{};
   const ck=F.filter(f=>f.baggage).map(f=>({f,kg:parseFloat((f.baggage.checked||'').match(/(\d+)\s*kg/i)?.[1]||'0')}));const min=ck.filter(x=>x.kg).sort((a,b)=>a.kg-b.kg)[0];
   $('#rulesAlert').innerHTML=(R.alert?`<div class="alert warn"><span class="ic">!</span><div>${R.alert}</div></div>`:'')+(min&&ck.some(x=>x.kg>min.kg)?`<div class="alert warn"><span class="ic">!</span><div>위탁 수하물 한도가 가장 적은 구간은 <b>${esc(min.f.flightNo||min.f.id)} ${min.kg}kg</b>입니다. 가방 하나를 ${min.kg}kg 이하로 맞추면 전 구간 추가요금이 없습니다.</div></div>`:'');
