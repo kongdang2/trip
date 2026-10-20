@@ -1059,7 +1059,7 @@ const FN=CFG.claudeFunction||'trip-claude', BUCKET=CFG.bucket||'trip-files';
 let user=null, cur=null /* 현재 출장 행 */, savedAt=null, saveTimer=null, saving=false, dirty=false;
 const keyOf=d=>'trip:'+(((d||{}).trip||{}).id||((d||{}).trip||{}).title||'default')+':';
 /* ---- 오프라인(2026-10-18 hong 요청): 마지막으로 연 출장을 이 기기에 저장해 두고, 서버에 못 닿으면 그걸로 연다.
-   화면 파일은 sw.js가 캐시. 공항 캡처·열어 본 증빙은 Cache API('trip-files-v1')에 보관(여권 사본은 보관하지 않음). 2026-10-20: 출장을 열면 나머지 모든 파일을 뒤에서 미리 받아 둠. */
+   화면 파일은 sw.js가 캐시. 공항 캡처·열어 본 증빙은 Cache API('trip-files-v1')에 보관(2026-10-20 hong이 카드에서 여권 사본도 저장하기로 선택). 출장을 열면 모든 파일을 뒤에서 미리 받아 둠. */
 const OFF='trip-offline';let offline=false,offAt=0;
 const isNet=e=>!e||e.name==='AbortError'||/fetch|network|timeout|Load failed|NetworkError|ERR_/i.test(String((e&&e.message)||e));
 const within=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
@@ -1067,10 +1067,10 @@ function offSave(pending){if(!cur)return;try{if(pending==null){const o=offLoad()
   localStorage.setItem(OFF,JSON.stringify({row:{...cur,data:d,expenses:store.get(K+'exp',cur.expenses||[]),fx:store.get(K+'fx',cur.fx||{})},email:user&&user.email,at:Date.now(),pending:!!pending}))}catch(e){console.warn('오프라인 저장 실패',e)}}
 function offLoad(){try{return JSON.parse(localStorage.getItem(OFF)||'null')}catch(e){return null}}
 function bootOffline(){const s=offLoad();if(!s||!s.row)return false;offline=true;offAt=s.at;user=user||{email:s.email||''};gate.style.display='none';openTrip(s.row);return true}
-const FCACHE='trip-files-v1',fKey=n=>new URL('__files/'+encodeURIComponent(n),location.href).href,cacheable=n=>!/^(여권|passport)/i.test(n),KEEPMAX=25*1024*1024;let pf={n:0,m:0,run:false,done:false};
+const FCACHE='trip-files-v1',fKey=n=>new URL('__files/'+encodeURIComponent(n),location.href).href,cacheable=n=>true,KEEPMAX=25*1024*1024;let pf={n:0,m:0,run:false,done:false};
 async function fileCached(n){try{if(!window.caches)return null;const c=await caches.open(FCACHE);const r=await c.match(fKey(n));return r?URL.createObjectURL(await r.blob()):null}catch(e){return null}}
 async function fileKeep(n,url){try{if(!window.caches||!cacheable(n))return;const c=await caches.open(FCACHE);if(await c.match(fKey(n)))return;const r=await fetch(url);if(r.ok)await c.put(fKey(n),r)}catch(e){}}
-/* 출장을 열면 여권 사본을 뺀 모든 파일을 뒤에서 받아 둔다. 같은 이름으로 다시 올린 파일은 __cloudUpload가 캐시를 비워 새로 받고, 지운 파일은 캐시에서도 지운다. */
+/* 출장을 열면 모든 파일을 뒤에서 받아 둔다. 같은 이름으로 다시 올린 파일은 __cloudUpload가 캐시를 비워 새로 받고, 지운 파일은 캐시에서도 지운다. */
 async function filePrefetch(){if(pf.run||offline||!navigator.onLine||!cur||!window.caches)return;pf.run=true;pf.done=false;
   try{const files=cur.files||{},names=Object.keys(files).filter(cacheable),c=await caches.open(FCACHE);
     for(const k of await c.keys()){const m=/__files\/([^/]+)$/.exec(k.url);if(m&&!files[decodeURIComponent(m[1])])await c.delete(k)}
@@ -1080,7 +1080,8 @@ async function filePrefetch(){if(pf.run||offline||!navigator.onLine||!cur||!wind
       if(!error&&data)for(const [i,n] of need.entries()){const u=data[i]&&data[i].signedUrl;if(!u||offline||!navigator.onLine)continue;
         try{const r=await fetch(u);const len=+r.headers.get('content-length')||0;if(r.ok&&len<=KEEPMAX){await c.put(fKey(n),r);pf.n++;barRender()}}catch(e){}}}
     pf.done=pf.n>=pf.m}catch(e){console.warn('미리 받기 실패',e)}pf.run=false;barRender()}
-const offChip=()=>!cur||!window.caches?'':pf.run?`<span style="color:#b45309" title="인터넷이 될 때 파일을 이 기기에 받아 둡니다">📥 오프라인용 파일 저장 중 ${pf.n}/${pf.m}</span>`:pf.done&&pf.m?`<span style="color:#15803d" title="${pf.m}개 파일이 이 기기에 저장돼 비행기 모드에서도 열립니다. 여권 사본은 보안상 제외입니다."><b>✅ 오프라인 준비됨</b> (파일 ${pf.m}개)</span>`:''
+async function fileCacheClear(){try{await caches.delete(FCACHE)}catch(e){}pf={n:0,m:0,run:false,done:false};barRender()}
+const offChip=()=>!cur||!window.caches?'':pf.run?`<span style="color:#b45309" title="인터넷이 될 때 파일을 이 기기에 받아 둡니다">📥 오프라인용 파일 저장 중 ${pf.n}/${pf.m}</span>`:pf.done&&pf.m?`<span style="color:#15803d" title="${pf.m}개 파일이 이 기기에 저장돼 비행기 모드에서도 열립니다. 여권 사본도 포함돼 있습니다. 폰을 바꾸거나 잃어버리기 전에는 '저장 지우기'로 지우세요."><b>✅ 오프라인 준비됨</b> (파일 ${pf.m}개) <a href="#" id="cgClr" style="font-size:12px">저장 지우기</a></span>`:''
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(e=>console.warn('sw',e));
 window.addEventListener('online',()=>{if(cur&&dirty&&!offline)flush();barRender()});window.addEventListener('offline',()=>barRender());
 const hhmm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
@@ -1196,6 +1197,7 @@ function barRender(){const net=offline||!navigator.onLine;const st=saving?'저�
   bar.innerHTML=`${net?`<span class="cgOff" style="color:#b45309;font-weight:700">📴 오프라인${offline&&offAt?' · '+esc(dmy(offAt))+' 저장본':''}</span><button class="btn" id="cgRe">🔄 다시 연결</button>`:''}<span>☁ ${esc(user?user.email:'')}</span>${offChip()}${cur?`<span id="cgSt">${st}</span>`:''}<button class="btn" id="cgListBtn">출장 목록</button>${cur?`<label class="btn" title="확인서·영수증 PDF를 AI 처리 없이 저장소에만 올립니다. 데이터의 file 필드와 파일명이 같으면 📎 링크가 바로 열립니다">📁 증빙 파일 올리기<input type="file" id="cgUp" multiple style="display:none"></label><button class="btn" id="cgDl">JSON 내려받기</button>${ppName()?`<button class="btn" id="cgPp" title="비공개 저장소의 여권 사본을 10분짜리 임시 링크로 엽니다. 바꾸려면 📁로 '여권'으로 시작하는 파일을 올리세요">🛂 여권 사본</button>`:`<label class="btn" title="여권 사진·PDF를 비공개 저장소에만 보관합니다(AI 처리·데이터 기록 없음)">🛂 여권 사본 올리기<input type="file" id="cgPpUp" accept="image/*,.pdf" style="display:none"></label>`}`:''}<button class="btn" id="cgOut2">로그아웃</button>`;
   $('#cgListBtn').onclick=()=>{if(cur){store.del('trip-cloud-current');location.hash='';location.reload()}else showList()};
   $('#cgOut2').onclick=()=>$('#cgOut').click();
+  const clr=$('#cgClr');if(clr)clr.onclick=ev=>{ev.preventDefault();if(confirm('이 기기에 저장된 오프라인용 파일(여권 사본 포함)을 모두 지울까요? 앱을 다시 열면 인터넷이 될 때 다시 받아 둡니다.'))fileCacheClear()};
   const re=$('#cgRe');if(re)re.onclick=async()=>{if(dirty&&cur){offline=false;await flush();if(dirty){offline=true;barRender();return}}location.reload()};
   if(cur){$('#cgDl').onclick=()=>{const b=$('#dlJson');if(b)b.click()};
     $('#cgUp').addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const st=$('#cgSt');if(st)st.textContent=`파일 ${fs.length}개 올리는 중…`;
