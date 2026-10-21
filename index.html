@@ -684,6 +684,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
 #frontCard .fcKv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:20px;margin:0}
 #frontCard .fcKv dt{color:#666}#frontCard .fcKv dd{margin:0;font-weight:700;word-break:break-all}
 #frontCard .fcKo{margin-top:14px;font-size:14px;color:#666}
+
+.zhRow{padding:10px 0;border-top:1px solid var(--line)}
+.zhC2{font-size:20px;font-weight:700;margin:2px 0;line-height:1.35}
+#zhBig{display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;padding:20px}
+#zhBig .zhB{position:relative;text-align:center;max-width:720px;width:100%}
+#zhBig .zhK{font-size:18px;color:var(--mute);margin-bottom:14px}
+#zhBig .zhC{font-size:clamp(34px,9vw,64px);font-weight:800;line-height:1.3;word-break:keep-all}
+#zhBig .zhP{font-size:clamp(18px,4.5vw,28px);color:var(--ink2);margin-top:12px}
 </style>
 <style>
 :root{
@@ -938,7 +946,7 @@ details.alerts[open] summary{margin-bottom:8px}
   <div id="hero-agents" style="display:none"></div><div id="agentCards" style="display:none"></div>
 </section>
 
-<section id="s-air"><div class="hero" id="hero-air"></div><div class="ask" data-agent="air"></div><div class="grid g2" id="airCards"></div></section>
+<section id="s-air"><div class="hero" id="hero-air"></div><div id="zhLink"></div><div class="ask" data-agent="air"></div><div class="grid g2" id="airCards"></div></section>
 <section id="s-hotel"><div class="hero" id="hero-hotel"></div><div id="nightCheck"></div><div class="ask" data-agent="hotel"></div><div class="grid g2" id="hotelCards"></div></section>
 
 
@@ -959,6 +967,7 @@ details.alerts[open] summary{margin-bottom:8px}
   <div class="ask" data-agent="rules"></div>
   <div id="rulesAlert"></div>
   <div id="wxWrap"></div>
+  <div id="zhWrap"></div>
   <div class="infoHead"><h3 class="sec">✈️ 탑승·수하물</h3></div>
   <div class="card" id="bagWrap"><div class="tablewrap"><table id="bagTable"></table></div></div>
   <div class="grid g2" style="margin-top:14px" id="ruleSections"></div>
@@ -2016,8 +2025,92 @@ function wxRender(){const el=document.getElementById('wxWrap');if(!el)return;con
   el.innerHTML=`<div class="card" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">🌤 출장지별 날씨</h3><span class="muted small">${st?`${when} 기준${net?'':' · 오프라인 저장본'}`:(net?'':'오프라인이라 아직 받지 못했습니다')}</span><button class="btn" type="button" id="wxRe" style="margin-left:auto"${net?'':' disabled'}>🔄 ${wxBusy?'불러오는 중…':'새로 받기'}</button></div>${blocks}<p class="small muted" style="margin:8px 0 0">예보는 Open-Meteo(지점 좌표 기준, 현지 시각 하루 단위)입니다. 복장 참고는 기온·강수 기준 자동 안내입니다.${st&&st.fail?` 일부 도시는 받지 못해 이전 값을 보여 줍니다.`:''}</p></div>`;
   const b=document.getElementById('wxRe');if(b)b.onclick=()=>wxRefresh(true)}
 window.addEventListener('online',()=>{try{wxRefresh()}catch(e){}});
+const ZH=[
+ ['🍽️ 기내식·음료',[
+  ['기내식 안 먹을게요','我不吃飞机餐。','Wǒ bù chī fēijīcān.'],
+  ['콜라 주세요','请给我一杯可乐。','Qǐng gěi wǒ yì bēi kělè.'],
+  ['물 주세요','请给我一杯水。','Qǐng gěi wǒ yì bēi shuǐ.'],
+  ['따뜻한 물 주세요','请给我一杯热水。','Qǐng gěi wǒ yì bēi rèshuǐ.'],
+  ['커피 주세요','请给我一杯咖啡。','Qǐng gěi wǒ yì bēi kāfēi.'],
+  ['차 주세요','请给我一杯茶。','Qǐng gěi wǒ yì bēi chá.'],
+  ['오렌지 주스 주세요','请给我一杯橙汁。','Qǐng gěi wǒ yì bēi chéngzhī.'],
+  ['한 잔 더 주세요','请再来一杯。','Qǐng zài lái yì bēi.'],
+  ['얼음 빼 주세요','不要冰。','Bú yào bīng.'],
+  ['설탕·우유는 넣지 마세요','不加糖，不加奶。','Bù jiā táng, bù jiā nǎi.'],
+  ['맥주 있나요?','有啤酒吗？','Yǒu píjiǔ ma?'],
+  ['닭고기밥으로 주세요','我要鸡肉饭。','Wǒ yào jīròu fàn.'],
+  ['소고기밥으로 주세요','我要牛肉饭。','Wǒ yào niúròu fàn.'],
+  ['돼지고기는 못 먹어요','我不吃猪肉。','Wǒ bù chī zhūròu.'],
+  ['견과류 알레르기가 있어요','我对坚果过敏。','Wǒ duì jiānguǒ guòmǐn.'],
+  ['식사는 치워 주세요','请收走吧，谢谢。','Qǐng shōu zǒu ba, xièxie.'],
+  ['자고 있으면 깨우지 마세요','我睡觉的时候，请不要叫醒我。','Wǒ shuìjiào de shíhou, qǐng búyào jiàoxǐng wǒ.']]],
+ ['💺 좌석·짐',[
+  ['제 자리가 어디인가요?','请问我的座位在哪里？','Qǐngwèn wǒ de zuòwèi zài nǎlǐ?'],
+  ['여기가 제 자리 같아요','这好像是我的座位。','Zhè hǎoxiàng shì wǒ de zuòwèi.'],
+  ['짐을 어디에 둘 수 있나요?','这个行李可以放在哪里？','Zhège xíngli kěyǐ fàng zài nǎlǐ?'],
+  ['짐 올리는 것 좀 도와주세요','能帮我把行李放上去吗？','Néng bāng wǒ bǎ xíngli fàng shàngqù ma?'],
+  ['실례합니다, 지나가겠습니다','不好意思，请让一下。','Bù hǎoyìsi, qǐng ràng yíxià.'],
+  ['의자를 뒤로 젖혀도 될까요?','我可以把座椅放倒吗？','Wǒ kěyǐ bǎ zuòyǐ fàngdǎo ma?'],
+  ['자리를 바꿀 수 있나요?','可以换个座位吗？','Kěyǐ huàn ge zuòwèi ma?'],
+  ['화장실이 어디인가요?','洗手间在哪里？','Xǐshǒujiān zài nǎlǐ?'],
+  ['담요 주세요','请给我一条毯子。','Qǐng gěi wǒ yì tiáo tǎnzi.'],
+  ['베개 주세요','请给我一个枕头。','Qǐng gěi wǒ yí ge zhěntou.'],
+  ['좀 추워요','有点冷。','Yǒudiǎn lěng.'],
+  ['좀 더워요','有点热。','Yǒudiǎn rè.'],
+  ['여기서 충전해도 되나요?','这里可以充电吗？','Zhèlǐ kěyǐ chōngdiàn ma?']]],
+ ['🙋 승무원 호출·몸이 안 좋을 때',[
+  ['저기요, 도와주실 수 있나요?','您好，请问可以帮我一下吗？','Nín hǎo, qǐngwèn kěyǐ bāng wǒ yíxià ma?'],
+  ['영어 하실 수 있나요?','你会说英语吗？','Nǐ huì shuō Yīngyǔ ma?'],
+  ['한국어 하는 승무원이 있나요?','有会说韩语的乘务员吗？','Yǒu huì shuō Hányǔ de chéngwùyuán ma?'],
+  ['몸이 안 좋아요','我不舒服。','Wǒ bù shūfu.'],
+  ['멀미가 나요','我晕机了。','Wǒ yùnjī le.'],
+  ['봉투 하나 주세요','请给我一个呕吐袋。','Qǐng gěi wǒ yí ge ǒutùdài.'],
+  ['머리가 아파요, 약 있나요?','我头疼，有药吗？','Wǒ tóuténg, yǒu yào ma?'],
+  ['잠시만 기다려 주세요','请稍等。','Qǐng shāo děng.']]],
+ ['🛬 도착·환승·입국',[
+  ['몇 시에 도착하나요?','预计几点到达？','Yùjì jǐ diǎn dàodá?'],
+  ['비행기가 지연되나요?','航班延误了吗？','Hángbān yánwù le ma?'],
+  ['비행시간이 얼마나 걸리나요?','飞行时间大概多久？','Fēixíng shíjiān dàgài duōjiǔ?'],
+  ['환승 게이트가 어디인가요?','请问转机的登机口在哪里？','Qǐngwèn zhuǎnjī de dēngjīkǒu zài nǎlǐ?'],
+  ['제 짐은 인천까지 바로 가나요?','我的行李会直接转到仁川吗？','Wǒ de xíngli huì zhíjiē zhuǎndào Rénchuān ma?'],
+  ['연결 항공편을 놓쳤어요, 어떻게 해야 하나요?','我错过了转机航班，怎么办？','Wǒ cuòguòle zhuǎnjī hángbān, zěnme bàn?'],
+  ['보안검색은 어디인가요?','安检在哪里？','Ānjiǎn zài nǎlǐ?'],
+  ['짐 찾는 곳이 어디인가요?','行李提取处在哪里？','Xíngli tíqǔchù zài nǎlǐ?'],
+  ['출구가 어디인가요?','出口在哪里？','Chūkǒu zài nǎlǐ?']]],
+ ['💬 기본 인사',[
+  ['안녕하세요','你好。','Nǐ hǎo.'],
+  ['감사합니다','谢谢。','Xièxie.'],
+  ['네 / 좋아요','好的。','Hǎo de.'],
+  ['괜찮아요, 됐습니다','不用了，谢谢。','Búyòng le, xièxie.'],
+  ['필요 없어요','不要。','Bú yào.'],
+  ['죄송합니다','对不起。','Duìbuqǐ.']]]];
+let zhCat=0,zhOpen=false;
+function zhVoice(){try{const v=speechSynthesis.getVoices();return v.find(x=>/^zh[-_]CN/i.test(x.lang))||v.find(x=>/^zh/i.test(x.lang))||null}catch(e){return null}}
+function zhSay(t){if(!('speechSynthesis' in window))return alert('이 브라우저는 음성 재생을 지원하지 않습니다. "크게 보여주기"로 승무원에게 보여 주세요.');
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t),v=zhVoice();u.lang='zh-CN';if(v)u.voice=v;u.rate=.85;speechSynthesis.speak(u)}catch(e){alert('음성 재생에 실패했습니다.')}}
+function zhShow(ci,pi){const p=ZH[ci][1][pi];let o=document.getElementById('zhBig');if(!o){o=document.createElement('div');o.id='zhBig';document.body.appendChild(o)}
+  o.innerHTML=`<div class="zhB"><button type="button" class="btn" data-zhx="1" style="position:absolute;top:12px;right:12px">✕ 닫기</button><div class="zhK">${esc(p[0])}</div><div class="zhC">${esc(p[1])}</div><div class="zhP">${esc(p[2])}</div><button type="button" class="btn pri" data-zhsay="${ci}.${pi}" style="margin-top:18px;font-size:18px;padding:10px 22px">🔊 소리로 들려주기</button></div>`;o.style.display='flex'}
+function zhRender(){const w=document.getElementById('zhWrap'),l=document.getElementById('zhLink');const cn=(DATA.transport||{}).mapApp==='amap';
+  if(l)l.innerHTML=cn?`<div style="margin-bottom:12px"><button class="btn" type="button" data-zhgo="1">🗣 기내 중국어 표현 (오프라인·음성)</button></div>`:'';
+  if(!w)return;if(!cn){w.innerHTML='';return}
+  const v=zhVoice(),vs=v?(v.localService?'✅ 이 기기에 중국어 음성이 있어 비행기 모드에서도 소리가 납니다.':'⚠️ 중국어 음성이 있지만 인터넷 음성일 수 있습니다. 비행 중엔 소리가 안 나면 아래 안내대로 음성 데이터를 내려받아 두세요.'):'⚠️ 이 기기에서 중국어 음성을 찾지 못했습니다. 소리가 안 나면 "크게 보여주기"로 승무원에게 화면을 보여 주세요.';
+  const [nm,ps]=ZH[zhCat];
+  w.innerHTML=`<details class="card" id="zhDet" style="margin-bottom:14px"${zhOpen?' open':''}><summary style="cursor:pointer;font-weight:700;font-size:16px">🗣 기내 중국어 표현 <span class="muted small" style="font-weight:400">· 한국어 뜻 · 병음 · 음성 · 오프라인</span></summary>
+   <div class="small muted" style="margin:8px 0">${vs}<br>오프라인에서도 소리 나게 하려면 <b>출발 전 인터넷이 될 때</b> 중국어 음성 데이터를 내려받아 두세요. 안드로이드: 설정 → 일반 → 언어 → 텍스트 음성 변환 → Google 음성 서비스(⚙) → 음성 데이터 설치 → 중국어(중국). 아이폰: 설정 → 손쉬운 사용 → 말하는 콘텐츠 → 음성 → 중국어 → Tingting 내려받기. 문구 자체는 앱이 한 번 열려 있으면 오프라인에서도 보입니다.</div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${ZH.map((c,i)=>`<button type="button" class="btn${i===zhCat?' pri':''}" data-zhcat="${i}">${c[0]}</button>`).join('')}</div>
+   ${ps.map((p,i)=>`<div class="zhRow"><div class="small muted">${esc(p[0])}</div><div class="zhC2">${esc(p[1])}</div><div class="small" style="color:var(--mute)">${esc(p[2])}</div><div style="margin-top:4px;display:flex;gap:6px"><button type="button" class="btn" data-zhsay="${zhCat}.${i}">🔊 듣기</button><button type="button" class="btn" data-zhshow="${zhCat}.${i}">🔍 크게 보여주기</button></div></div>`).join('')}
+   </details>`;
+  const d=document.getElementById('zhDet');if(d)d.addEventListener('toggle',()=>{zhOpen=d.open})}
+document.addEventListener('click',e=>{if(e.target.id==='zhBig'){e.target.style.display='none';return}const t=e.target.closest('[data-zhsay],[data-zhshow],[data-zhcat],[data-zhx],[data-zhgo]');if(!t)return;
+  if(t.dataset.zhsay){const [c,i]=t.dataset.zhsay.split('.').map(Number);zhSay(ZH[c][1][i][1])}
+  else if(t.dataset.zhshow){const [c,i]=t.dataset.zhshow.split('.').map(Number);zhShow(c,i)}
+  else if(t.dataset.zhcat!=null){zhCat=+t.dataset.zhcat;zhOpen=true;zhRender()}
+  else if(t.dataset.zhx){document.getElementById('zhBig').style.display='none'}
+  else if(t.dataset.zhgo){zhOpen=true;show('rules');zhRender();const d=document.getElementById('zhDet');if(d)setTimeout(()=>d.scrollIntoView({block:'start'}),50)}});
+try{if('speechSynthesis' in window)speechSynthesis.addEventListener('voiceschanged',()=>{try{zhRender()}catch(e){}})}catch(e){}
 function rules(){
   try{siteCards()}catch(e){console.error(e)}
+  try{zhRender()}catch(e){console.error(e)}
   try{wxRender();wxRefresh()}catch(e){console.error(e)}
   const R=DATA.rules||{};
   const ck=F.filter(f=>f.baggage).map(f=>({f,kg:parseFloat((f.baggage.checked||'').match(/(\d+)\s*kg/i)?.[1]||'0')}));const min=ck.filter(x=>x.kg).sort((a,b)=>a.kg-b.kg)[0];
